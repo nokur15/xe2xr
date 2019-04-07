@@ -9,7 +9,9 @@ class xe2xr_template():
         self.l2_trunk_template = '''
         --------------------------------------------------------
         interface {{interface}}.{{vlan}} l2transport
+         {%- if description != None %}
          description {{description}}
+         {%- endif }
          encapsulation dot1q {{vlan}} exact
          rewrite ingress tag pop {{native}} symmetric
 
