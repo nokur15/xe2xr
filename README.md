@@ -15,6 +15,19 @@ Python 3.6
 
 ### Tutorial
 
+clone repository :
+
+```
+± % git clone https://github.com/akrommusajid/xe2xr.git
+```
+
+activate virtual environment
+
+```
+± % cd xe2xr
+± % source bin/activate
+```
+
 Get ready for your XE flavor configuration :
 
 ```
