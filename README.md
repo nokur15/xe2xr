@@ -231,12 +231,14 @@ Static Route
 
 ### Question/Discussion
 if you find any issue in xe2xr, then open an issue right here : 
+
 [https://github.com/akrommusajid/xe2xr/issues](https://github.com/akrommusajid/xe2xr/issues)
 
 if you have any question or would like to discussion please contact me to a.musajid@gmail.com
 
 ---
 Akrom Musajid
+
 https://www.linkedin.com/in/akrommusajid/
 
 
