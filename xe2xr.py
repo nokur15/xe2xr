@@ -11,7 +11,7 @@ class xe2xr_template():
         interface {{interface}}.{{vlan}} l2transport
          {%- if description != None %}
          description {{description}}
-         {%- endif }
+         {%- endif %}
          encapsulation dot1q {{vlan}} exact
          rewrite ingress tag pop {{native}} symmetric
 
