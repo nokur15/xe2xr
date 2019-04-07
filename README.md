@@ -72,6 +72,7 @@ ip route vrf def 10.247.48.32 255.255.255.248 10.247.141.52 tag 113101 name this
 Execute with this command :
 
 ```
+± % python xe2xr.py config.txt
 layer 3 interface
 ========================================================
 
@@ -236,6 +237,6 @@ if you have any question or would like to discussion please contact me to a.musa
 
 ---
 Akrom Musajid
-linkedin : https://www.linkedin.com/in/akrommusajid/
+https://www.linkedin.com/in/akrommusajid/
 
 
