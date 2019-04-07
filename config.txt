@@ -1,6 +1,6 @@
 interface Vlan3442
- description 10.247.137.80/28_Cluster#22_IuB_RJAP2_3442   
- ip vrf forwarding iub
+ description cluster_vlan3442  
+ ip vrf forwarding abc
  ip address 10.247.137.92 255.255.255.240
  no ip redirects
  no ip proxy-arp
@@ -11,15 +11,15 @@ interface Vlan3442
  arp timeout 7200
 !
 interface Vlan2400
- description LTE_UPLANE_enodeB_CLUSTER_7  
- ip vrf forwarding lte-uplane
+ description cluster_vlan2400  
+ ip vrf forwarding def
  ip address 10.249.179.158 255.255.255.224
  no ip redirects
  no ip proxy-arp
  shutdown
 !
 interface GigabitEthernet2/2
- description To Simpul_Cluster_3425_RNJPR1
+ description trunk_interface
  switchport
  switchport trunk encapsulation dot1q
  switchport trunk allowed vlan 3142,3394,3682
@@ -30,7 +30,7 @@ interface GigabitEthernet2/2
  storm-control multicast level 0.10
 !
 interface Port-Channel10
- description To Simpul_Cluster_3425_RNJPR1
+ description to_other_city
  switchport
  switchport trunk encapsulation dot1q
  switchport trunk allowed vlan 3142,3394,3682
@@ -41,7 +41,7 @@ interface Port-Channel10
  storm-control broadcast level 0.10
  storm-control multicast level 0.10
 !
-ip route 10.247.48.8 255.255.255.248 10.247.141.49 tag 113101 name OAM_NodeB_RJAP5_DMTYOBE_Vlan3463_MetroE
-ip route vrf iub 10.247.48.16 255.255.255.248 10.247.141.50
-ip route 10.247.48.24 255.255.255.248 10.247.141.51 name OAM_NodeB_RJAP5_JAP077MW1_DMTBTNGRAND_Vlan3463_MetroE
-ip route vrf iub 10.247.48.32 255.255.255.248 10.247.141.52 tag 113101 name OAM_NodeB_RJAP5_TELKOMABEPURA_Vlan3463_MetroE
+ip route 10.247.48.8 255.255.255.248 10.247.141.49 tag 113101 name this_is_static_routing
+ip route vrf abc 10.247.48.16 255.255.255.248 10.247.141.50
+ip route 10.247.48.24 255.255.255.248 10.247.141.51 name this_is_static_routing
+ip route vrf def 10.247.48.32 255.255.255.248 10.247.141.52 tag 113101 name this_is_static_routing

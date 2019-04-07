@@ -26,27 +26,45 @@ class xe2xr_template():
         self.l3_interface_template = '''
         --------------------------------------------------------
         interface {{interface}}
-         {% if interface_vrf != None %}vrf {{vrf}}{% endif %}
-         {% if description != None %}description {{description}}{% endif %}
-         {% if ipv4 != None %}ipv4 address {{ipv4}} {{netmask}}{% endif %}
+         {%- if interface_vrf != None %}
+         vrf {{vrf}}
+         {%- endif %}
+         {%- if description != None %}
+         description {{description}}
+         {%- endif %}
+         {%- if ipv4 != None %}
+         ipv4 address {{ipv4}} {{netmask}}
+         {%- endif %}
          load-interval 30
-         {% if arp_timeout != None %}arp timeout {{arp_timeout}}{% endif %}
-         {% if shutdown == False %}shutdown{% endif %}
+         {%- if arp_timeout != None %}
+         arp timeout {{arp_timeout}}
+         {%- endif %}
+         {%- if shutdown == False %}
+         shutdown
+         {%- endif %}
         '''
         self.hsrp_template = '''
         router hsrp
          interface {{interface}}
           address-family ipv4
-          {% if hsrp_version != None %}hsrp version {{hsrp_version}}{% endif %}
+          {%- if hsrp_version != None %}
+          hsrp version {{hsrp_version}}
+          {%- endif %}
           hsrp {{hsrp_group}}
-          {% if hsrp_preempt == True%}preempt{% endif %}
-          {% if hsrp_priority %}priotiy {{hsrp_priority}}{% endif %}
+          {%- if hsrp_preempt == True %}
+          preempt
+          {%- endif %}
+          {%- if hsrp_priority %}
+          priotiy {{hsrp_priority}}
+          {%- endif %}
           address {{hsrp_ip}}
         --------------------------------------------------------  
         '''
         self.static_route = '''
         router static
-        {% if vrf != None %} vrf {{vrf}}{% endif %}
+        {%- if vrf != None %} 
+         vrf {{vrf}}
+        {%- endif %}
          address-family ipv4 unicast
           {{dst_network}} {{netmask}} {{gateway}} {% if tag != None %}tag {{tag}}{% endif %} {% if description != None %}description {{description}}{% endif %}
         '''
@@ -247,16 +265,9 @@ class xe2xr():
     
 def main():
     output = xe2xr(file=argv[1])
-    static_route = output.find_static_route()
-    pprint(static_route)
     xr_template = xe2xr_template()
-    for static in static_route:
-        result = xr_template.xr_static_route(**static)
-        print(result)
-    '''
     l3_interfaces = output.find_l3_interface()
     #print(l3_interfaces)
-    xr_template = xe2xr_template()
     print('layer 3 interface')
     print('========================================================')
     for l3_interface  in l3_interfaces:
@@ -271,6 +282,12 @@ def main():
         if l2_interface['mode'] == 'trunk':
             result = xr_template.xr_trunk_interface(**l2_interface)
             print(result)
-    '''
+    print('Static Route')
+    print('========================================================')
+    static_route = output.find_static_route()
+    for static in static_route:
+        result = xr_template.xr_static_route(**static)
+        print(result)
+    
 if __name__ == "__main__":
     main()
