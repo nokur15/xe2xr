@@ -86,18 +86,40 @@ Execute with this command :
 
 ```
 ± % python xe2xr.py config.txt
-layer 3 interface
-========================================================
+------------ vrf def -------------
+*** l3 interface ***
 
-        --------------------------------------------------------
+        interface BVI2400
+         vrf def
+         description cluster_vlan2400
+         ipv4 address 10.249.179.158 255.255.255.224
+         load-interval 30
+        !
+        interface BVI2401
+         vrf def
+         description cluster_vlan2401
+         ipv4 address 10.249.178.158 255.255.255.224
+         load-interval 30
+        !
+
+*** static route ***
+
+        router static
+         vrf def
+         address-family ipv4 unicast
+          10.247.48.24 255.255.255.248 10.247.141.51  description this_is_static_routing
+          10.247.48.32 255.255.255.248 10.247.141.52 tag 113101 description this_is_static_routing
+
+------------ vrf abc -------------
+*** l3 interface ***
+
         interface BVI3442
          vrf abc
          description cluster_vlan3442
          ipv4 address 10.247.137.92 255.255.255.240
          load-interval 30
          arp timeout 7200
-         shutdown
-
+        !
         router hsrp
          interface BVI3442
           address-family ipv4
@@ -106,20 +128,18 @@ layer 3 interface
           preempt
           priotiy 110
           address 10.247.137.94
-        --------------------------------------------------------
+        !
 
+*** static route ***
 
-        --------------------------------------------------------
-        interface BVI2400
-         vrf def
-         description cluster_vlan2400
-         ipv4 address 10.249.179.158 255.255.255.224
-         load-interval 30
+        router static
+         vrf abc
+         address-family ipv4 unicast
+          10.247.48.8 255.255.255.248 10.247.141.49 tag 113101 description this_is_static_routing
+          10.247.48.16 255.255.255.248 10.247.141.50
 
-layer 2 interface
-========================================================
+------------ layer 2 interfaces --------------
 
-        --------------------------------------------------------
         interface GigabitEthernet2/2.3142 l2transport
          description trunk_interface
          encapsulation dot1q 3142 exact
@@ -133,9 +153,8 @@ layer 2 interface
             interface GigabitEthernet2/2.3142
             !
             routed interface BVI3142
-        --------------------------------------------------------
+        !
 
-        --------------------------------------------------------
         interface GigabitEthernet2/2.3394 l2transport
          description trunk_interface
          encapsulation dot1q 3394 exact
@@ -149,9 +168,8 @@ layer 2 interface
             interface GigabitEthernet2/2.3394
             !
             routed interface BVI3394
-        --------------------------------------------------------
+        !
 
-        --------------------------------------------------------
         interface GigabitEthernet2/2.3682 l2transport
          description trunk_interface
          encapsulation dot1q 3682 exact
@@ -165,10 +183,9 @@ layer 2 interface
             interface GigabitEthernet2/2.3682
             !
             routed interface BVI3682
-        --------------------------------------------------------
+        !
 
 
-        --------------------------------------------------------
         interface Bundle-Ether10.3142 l2transport
          description to_other_city
          encapsulation dot1q 3142 exact
@@ -182,9 +199,8 @@ layer 2 interface
             interface Bundle-Ether10.3142
             !
             routed interface BVI3142
-        --------------------------------------------------------
+        !
 
-        --------------------------------------------------------
         interface Bundle-Ether10.3394 l2transport
          description to_other_city
          encapsulation dot1q 3394 exact
@@ -198,9 +214,8 @@ layer 2 interface
             interface Bundle-Ether10.3394
             !
             routed interface BVI3394
-        --------------------------------------------------------
+        !
 
-        --------------------------------------------------------
         interface Bundle-Ether10.3682 l2transport
          description to_other_city
          encapsulation dot1q 3682 exact
@@ -214,31 +229,7 @@ layer 2 interface
             interface Bundle-Ether10.3682
             !
             routed interface BVI3682
-        --------------------------------------------------------
-
-Static Route
-========================================================
-
-        router static
-         address-family ipv4 unicast
-          10.247.48.8 255.255.255.248 10.247.141.49 tag 113101 description this_is_static_routing
-
-
-        router static
-         vrf abc
-         address-family ipv4 unicast
-          10.247.48.16 255.255.255.248 10.247.141.50
-
-
-        router static
-         address-family ipv4 unicast
-          10.247.48.24 255.255.255.248 10.247.141.51  description this_is_static_routing
-
-
-        router static
-         vrf def
-         address-family ipv4 unicast
-          10.247.48.32 255.255.255.248 10.247.141.52 tag 113101 description this_is_static_routing
+        !
 
 ```
 
