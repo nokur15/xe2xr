@@ -4,6 +4,7 @@ interface Vlan3442
  ip address 10.247.137.92 255.255.255.240
  no ip redirects
  no ip proxy-arp
+ bfd interval 750 min_rx 750 multiplier 3
  standby version 2
  standby 3442 ip 10.247.137.94
  standby 3442 priority 110
@@ -14,6 +15,7 @@ interface Vlan2400
  description cluster_vlan2400  
  ip vrf forwarding def
  ip address 10.249.179.158 255.255.255.224
+ bfd interval 750 min_rx 750 multiplier 3
  no ip redirects
  no ip proxy-arp
  shutdown
@@ -49,10 +51,9 @@ interface Port-Channel10
  storm-control broadcast level 0.10
  storm-control multicast level 0.10
 !
+ip route static bfd Vlan2400 10.249.179.159
 ip route static bfd Vlan2400 10.247.141.49
-ip route static bfd 10.247.141.49
-ip route static bfd Vlan2400
 ip route vrf abc 10.247.48.8 255.255.255.248 10.247.141.49 tag 113101 name this_is_static_routing
 ip route vrf abc 10.247.48.16 255.255.255.248 10.247.141.50
-ip route vrf def 10.247.48.24 255.255.255.248 10.247.141.51 name this_is_static_routing
+ip route vrf def 10.247.48.24 255.255.255.248 10.249.179.159 name this_is_static_routing
 ip route vrf def 10.247.48.32 255.255.255.248 10.247.141.52 tag 113101 name this_is_static_routing

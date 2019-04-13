@@ -3,6 +3,7 @@ from ciscoconfparse import CiscoConfParse
 import re
 from pprint import pprint
 from jinja2 import Template
+from ipaddress import IPv4Address, ip_interface
 
 class xe2xr_template():
     def __init__(self):
@@ -70,13 +71,22 @@ class xe2xr_template():
         {%- endif %}
          address-family ipv4 unicast
           {%- for network in networks %}
-          {{network['dst_network']}} {{network['netmask']}} {{network['gateway']}} {% if network['tag'] != None %}tag {{network['tag']}}{% endif %} {% if network['description'] != None %}description {{network['description']}}{% endif %}
+          {{network['dst_network']}} {{network['netmask']}} {{network['gateway']}} {% if network['bfd_interval'] %}bfd fast-detect minimum-interval {{network['bfd_interval']}} multiplier {{network['bfd_multiplier']}}{% endif %} {% if network['tag'] != None %}tag {{network['tag']}}{% endif %} {% if network['description'] != None %}description {{network['description']}}{% endif %}
           {%- endfor %}
         '''
     
-    def xr_static_route(self, vrf=None, networks=[]):        
+    def xr_static_route(self, vrf=None, networks=[], l3_interfaces=[], bfd=[]):
         static_route = Template(self.static_route)
-        result = static_route.render(vrf=vrf, networks=networks)
+        network_routes = []
+        for network in networks:
+            # bfd configuration detection
+            for interface in l3_interfaces:
+                ip_net = ip_interface(interface['ipv4']+'/'+interface['netmask'])
+                if network['gateway'] in [d['gateway'] for d in bfd] and IPv4Address(network['gateway']) in ip_net.network and interface['bfd_interval']:
+                    network['bfd_interval'] = interface['bfd_interval']
+                    network['bfd_multiplier'] = interface['bfd_multiplier']
+            network_routes.append(network)
+        result = static_route.render(vrf=vrf, networks=network_routes)
         return result
 
     def xr_trunk_interface(self, interface=None, description=None, mode='access', vlan=[], native=None, protocol=None):
@@ -89,7 +99,6 @@ class xe2xr_template():
         for vl in vlan:
             trunk_interface = Template(self.l2_trunk_template)
             result += trunk_interface.render(**data_trunk, vlan=vl)
-        
         return result
             
     def xr_l3_interface(self, vrf=None, l3_interfaces=[]):
@@ -121,17 +130,12 @@ class xe2xr():
                 'interface' : None,
                 'gateway' : None
             }
-            print(bfd_static.text)
             bfd = re.search('ip route static bfd (Vlan\S+|Giga\S+|TenGiga\S+)?\s?(\d+\.\d+\.\d+\.\d+)?', bfd_static.text)
             if bfd:
                 bfd_static_dict['interface'] = bfd.group(1)
                 bfd_static_dict['gateway'] = bfd.group(2)
-            elif bfd_interface:
-                bfd_static_dict['interface'] = bfd.group(1)
-            
             bfd_static_list.append(bfd_static_dict)
         return bfd_static_list
-
 
     def find_l2_interface(self):
         interfaces_cmd = self.ciscoparse.find_objects_w_child(parentspec=r'interface', childspec=r'switchport')
@@ -229,6 +233,10 @@ class xe2xr():
                 elif 'ip vrf forwarding' in cmd.text:
                     interface_vrf = re.search('ip vrf forwarding (\S+)', cmd.text)
                     interface['vrf'] = interface_vrf.group(1)
+                elif 'bfd interval' in cmd.text:
+                    bfd = re.search('bfd interval (\d+) min_rx (\d+) multiplier (\d+)', cmd.text)
+                    interface['bfd_interval'] = bfd.group(1)
+                    interface['bfd_multiplier'] = bfd.group(3)
             if hsrp['hsrp_enable'] == True:
                 interface.update(hsrp)
             interfaces.append(interface)
@@ -269,35 +277,33 @@ class xe2xr():
             static_routes.append(route)
         
         return static_routes
-    
+
 def main():
     config = xe2xr(file=argv[1])
     vrfes = config.find_vrf_interface()
     l2_interfaces = config.find_l2_interface()
     bfd_static = config.find_bfd_static_route()
-    pprint(bfd_static)
-    '''
     xr_template = xe2xr_template()
     if len(vrfes) > 0:
         for vrf in vrfes:
             print('------------ vrf %s -------------' % vrf)
-            print('*** l3 interface ***')
+            #print('*** l3 interface ***')
             l3_interfaces = config.find_l3_interface(vrf)
-            l3_interfaces_template = xr_template.xr_l3_interface(vrf=vrf, l3_interfaces=l3_interfaces)
-            print(l3_interfaces_template)
+            #pprint(l3_interfaces)
+            #l3_interfaces_template = xr_template.xr_l3_interface(vrf=vrf, l3_interfaces=l3_interfaces)
+            #print(l3_interfaces_template)
             
             print('*** static route ***')
             static_routes = config.find_static_route(vrf)
-            static_route_template = xr_template.xr_static_route(vrf=vrf, networks=static_routes)
+            static_route_template = xr_template.xr_static_route(vrf=vrf, networks=static_routes, l3_interfaces=l3_interfaces, bfd=bfd_static)
             print(static_route_template)
-    
+            #print(static_route_template)
+    '''
     print('------------ layer 2 interfaces --------------')
     for l2_interface in l2_interfaces:
         l2_interface_template = xr_template.xr_trunk_interface(**l2_interface)
         print(l2_interface_template)
     '''
-    
-    
-    
+
 if __name__ == "__main__":
     main()
