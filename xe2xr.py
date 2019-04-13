@@ -112,6 +112,27 @@ class xe2xr():
         
         return set(vrfes)
 
+    def find_bfd_static_route(self):
+        bfd_static_cmd = self.ciscoparse.find_objects(r'ip route static bfd')
+        bfd_static_list = []
+
+        for bfd_static in bfd_static_cmd:
+            bfd_static_dict = {
+                'interface' : None,
+                'gateway' : None
+            }
+            print(bfd_static.text)
+            bfd = re.search('ip route static bfd (Vlan\S+|Giga\S+|TenGiga\S+)?\s?(\d+\.\d+\.\d+\.\d+)?', bfd_static.text)
+            if bfd:
+                bfd_static_dict['interface'] = bfd.group(1)
+                bfd_static_dict['gateway'] = bfd.group(2)
+            elif bfd_interface:
+                bfd_static_dict['interface'] = bfd.group(1)
+            
+            bfd_static_list.append(bfd_static_dict)
+        return bfd_static_list
+
+
     def find_l2_interface(self):
         interfaces_cmd = self.ciscoparse.find_objects_w_child(parentspec=r'interface', childspec=r'switchport')
         interfaces = list()
@@ -253,6 +274,9 @@ def main():
     config = xe2xr(file=argv[1])
     vrfes = config.find_vrf_interface()
     l2_interfaces = config.find_l2_interface()
+    bfd_static = config.find_bfd_static_route()
+    pprint(bfd_static)
+    '''
     xr_template = xe2xr_template()
     if len(vrfes) > 0:
         for vrf in vrfes:
@@ -271,7 +295,7 @@ def main():
     for l2_interface in l2_interfaces:
         l2_interface_template = xr_template.xr_trunk_interface(**l2_interface)
         print(l2_interface_template)
-    
+    '''
     
     
     

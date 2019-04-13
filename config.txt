@@ -49,6 +49,9 @@ interface Port-Channel10
  storm-control broadcast level 0.10
  storm-control multicast level 0.10
 !
+ip route static bfd Vlan2400 10.247.141.49
+ip route static bfd 10.247.141.49
+ip route static bfd Vlan2400
 ip route vrf abc 10.247.48.8 255.255.255.248 10.247.141.49 tag 113101 name this_is_static_routing
 ip route vrf abc 10.247.48.16 255.255.255.248 10.247.141.50
 ip route vrf def 10.247.48.24 255.255.255.248 10.247.141.51 name this_is_static_routing
