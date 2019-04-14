@@ -299,7 +299,8 @@ class xe2xr():
             if dst_network:
                 route['dst_network'] = dst_network.group(3)
                 route['netmask'] = dst_network.group(4)
-                route['interface'] = dst_network.group(5).replace('Vlan','BVI')
+                if dst_network.group(5):
+                    route['interface'] = dst_network.group(5).replace('Vlan', 'BVI')
                 route['gateway'] = dst_network.group(6)
             if description:
                 route['description'] = description.group(9)[:30]
