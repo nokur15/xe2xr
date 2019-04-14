@@ -86,150 +86,115 @@ Execute with this command :
 
 ```
 ± % python xe2xr.py config.txt
------------- vrf def -------------
+interface GigabitEthernet2/2.3142 l2transport
+ description trunk_interface
+ encapsulation dot1q 3142 exact
+ rewrite ingress tag pop 1 symmetric
+!
+
+interface GigabitEthernet2/2.3394 l2transport
+ description trunk_interface
+ encapsulation dot1q 3394 exact
+ rewrite ingress tag pop 1 symmetric
+!
+
+interface GigabitEthernet2/2.3682 l2transport
+ description trunk_interface
+ encapsulation dot1q 3682 exact
+ rewrite ingress tag pop 1 symmetric
+!
+
+interface Bundle-Ether10.3142 l2transport
+ description to_other_city
+ encapsulation dot1q 3142 exact
+ rewrite ingress tag pop 99 symmetric
+!
+
+interface Bundle-Ether10.3394 l2transport
+ description to_other_city
+ encapsulation dot1q 3394 exact
+ rewrite ingress tag pop 99 symmetric
+!
+
+interface Bundle-Ether10.3682 l2transport
+ description to_other_city
+ encapsulation dot1q 3682 exact
+ rewrite ingress tag pop 99 symmetric
+!
+
+l2vpn
+ bridge group BVI
+  bridge-domain 3394
+   storm-control multicast kbps 400
+   storm-control broadcast kbps 400
+   interface GigabitEthernet2/2.3394
+   !
+   interface Bundle-Ether10.3394
+   !
+   routed interface BVI3394
+!
+l2vpn
+ bridge group BVI
+  bridge-domain 3142
+   storm-control multicast kbps 400
+   storm-control broadcast kbps 400
+   interface GigabitEthernet2/2.3142
+   !
+   interface Bundle-Ether10.3142
+   !
+   routed interface BVI3142
+!
+l2vpn
+ bridge group BVI
+  bridge-domain 3682
+   storm-control multicast kbps 400
+   storm-control broadcast kbps 400
+   interface GigabitEthernet2/2.3682
+   !
+   interface Bundle-Ether10.3682
+   !
+   routed interface BVI3682
+!
+----------------------------- vrf def -------------------------------
 *** l3 interface ***
 
-        interface BVI2400
-         vrf def
-         description cluster_vlan2400
-         ipv4 address 10.249.179.158 255.255.255.224
-         load-interval 30
-        !
-        interface BVI2401
-         vrf def
-         description cluster_vlan2401
-         ipv4 address 10.249.178.158 255.255.255.224
-         load-interval 30
-        !
-
-*** static route ***
-
-        router static
-         vrf def
-         address-family ipv4 unicast
-          10.247.48.24 255.255.255.248 10.247.141.51  description this_is_static_routing
-          10.247.48.32 255.255.255.248 10.247.141.52 tag 113101 description this_is_static_routing
-
------------- vrf abc -------------
+interface BVI2400
+ vrf def
+ description cluster_vlan2400
+ ipv4 address 10.249.179.158 255.255.255.224
+ load-interval 30
+!
+----------------------------- vrf abc -------------------------------
 *** l3 interface ***
 
-        interface BVI3442
-         vrf abc
-         description cluster_vlan3442
-         ipv4 address 10.247.137.92 255.255.255.240
-         load-interval 30
-         arp timeout 7200
-        !
-        router hsrp
-         interface BVI3442
-          address-family ipv4
-          hsrp version 2
-          hsrp 3442
-          preempt
-          priotiy 110
-          address 10.247.137.94
-        !
-
+interface BVI3442
+ vrf abc
+ description cluster_vlan3442
+ ipv4 address 10.247.137.92 255.255.255.240
+ load-interval 30
+ arp timeout 7200
+!
+router hsrp
+ interface BVI3442
+  address-family ipv4
+  hsrp version 2
+  hsrp 3442
+  preempt
+  priotiy 110
+  address 10.247.137.94
+!
 *** static route ***
 
-        router static
-         vrf abc
-         address-family ipv4 unicast
-          10.247.48.8 255.255.255.248 10.247.141.49 tag 113101 description this_is_static_routing
-          10.247.48.16 255.255.255.248 10.247.141.50
+router static
+ vrf def
+ address-family ipv4 unicast
+  10.247.48.32 255.255.255.248  10.247.141.52  tag 113101 description this_is_static_routing
+!
+*** static route ***
 
------------- layer 2 interfaces --------------
-
-        interface GigabitEthernet2/2.3142 l2transport
-         description trunk_interface
-         encapsulation dot1q 3142 exact
-         rewrite ingress tag pop 1 symmetric
-
-         l2vpn
-          bridge group BVI
-           bridge-domain 3142
-            storm-control multicast kbps 400
-            storm-control broadcast kbps 400
-            interface GigabitEthernet2/2.3142
-            !
-            routed interface BVI3142
-        !
-
-        interface GigabitEthernet2/2.3394 l2transport
-         description trunk_interface
-         encapsulation dot1q 3394 exact
-         rewrite ingress tag pop 1 symmetric
-
-         l2vpn
-          bridge group BVI
-           bridge-domain 3394
-            storm-control multicast kbps 400
-            storm-control broadcast kbps 400
-            interface GigabitEthernet2/2.3394
-            !
-            routed interface BVI3394
-        !
-
-        interface GigabitEthernet2/2.3682 l2transport
-         description trunk_interface
-         encapsulation dot1q 3682 exact
-         rewrite ingress tag pop 1 symmetric
-
-         l2vpn
-          bridge group BVI
-           bridge-domain 3682
-            storm-control multicast kbps 400
-            storm-control broadcast kbps 400
-            interface GigabitEthernet2/2.3682
-            !
-            routed interface BVI3682
-        !
-
-
-        interface Bundle-Ether10.3142 l2transport
-         description to_other_city
-         encapsulation dot1q 3142 exact
-         rewrite ingress tag pop 99 symmetric
-
-         l2vpn
-          bridge group BVI
-           bridge-domain 3142
-            storm-control multicast kbps 400
-            storm-control broadcast kbps 400
-            interface Bundle-Ether10.3142
-            !
-            routed interface BVI3142
-        !
-
-        interface Bundle-Ether10.3394 l2transport
-         description to_other_city
-         encapsulation dot1q 3394 exact
-         rewrite ingress tag pop 99 symmetric
-
-         l2vpn
-          bridge group BVI
-           bridge-domain 3394
-            storm-control multicast kbps 400
-            storm-control broadcast kbps 400
-            interface Bundle-Ether10.3394
-            !
-            routed interface BVI3394
-        !
-
-        interface Bundle-Ether10.3682 l2transport
-         description to_other_city
-         encapsulation dot1q 3682 exact
-         rewrite ingress tag pop 99 symmetric
-
-         l2vpn
-          bridge group BVI
-           bridge-domain 3682
-            storm-control multicast kbps 400
-            storm-control broadcast kbps 400
-            interface Bundle-Ether10.3682
-            !
-            routed interface BVI3682
-        !
+router static
+ vrf abc
+ address-family ipv4 unicast
 
 ```
 
