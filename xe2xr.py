@@ -7,98 +7,128 @@ from ipaddress import IPv4Address, ip_interface
 
 class xe2xr_template():
     def __init__(self):
-        self.l2_trunk_template = '''
-        interface {{interface}}.{{vlan}} l2transport
-         {%- if description != None %}
-         description {{description}}
-         {%- endif %}
-         encapsulation dot1q {{vlan}} exact
-         rewrite ingress tag pop {{native}} symmetric
-
-         l2vpn
-          bridge group BVI
-           bridge-domain {{vlan}}
-            storm-control multicast kbps 400
-            storm-control broadcast kbps 400
-            interface {{interface}}.{{vlan}}
-            !
-            routed interface BVI{{vlan}}
-        !
+        self.l2_trunk_template_1 = '''
+interface {{interface['interface']}}.{{vlan}} l2transport
+ {%- if interface_vlan['description'] %}
+ description {{interface_vlan['description']}}
+ {%- endif %}
+ encapsulation dot1q {{vlan}} exact
+ rewrite ingress tag pop {{interface['native']}} symmetric
+!
+'''
+        self.l2_trunk_template_2 = '''
+interface {{interface['interface']}}.{{vlan}} l2transport
+ {%- if interface['description'] %}
+ description {{interface['description']}}
+ {%- endif %}
+ encapsulation dot1q {{vlan}} exact
+ rewrite ingress tag pop {{interface['native']}} symmetric
+!
         '''
+        self.l2vpn_template = '''
+l2vpn
+ bridge group BVI
+  bridge-domain {{vlan}}
+   storm-control multicast kbps 400
+   storm-control broadcast kbps 400
+   {%- for interface in interfaces %}
+   interface {{interface}}.{{vlan}}
+   !
+   {%- endfor %}
+   routed interface BVI{{vlan}}
+!
+'''
         self.l3_interface_template = '''
-        {%- for l3_interface in l3_interfaces %}
-        interface {{l3_interface['interface']}}
-         {%- if vrf != None %}
-         vrf {{vrf}}
-         {%- endif %}
-         {%- if l3_interface['description'] != None %}
-         description {{l3_interface['description']}}
-         {%- endif %}
-         {%- if l3_interface['ipv4'] != None %}
-         ipv4 address {{l3_interface['ipv4']}} {{l3_interface['netmask']}}
-         {%- endif %}
-         load-interval 30
-         {%- if l3_interface['arp_timeout'] %}
-         arp timeout {{l3_interface['arp_timeout']}}
-         {%- endif %}
-         {%- if l3_interfaces['shutdown'] == False %}
-         shutdown
-         {%- endif %}
-        !
-        {%- if l3_interface['hsrp_enable'] %}
-        router hsrp
-         interface {{l3_interface['interface']}}
-          address-family ipv4
-          {%- if l3_interface['hsrp_version'] != None %}
-          hsrp version {{l3_interface['hsrp_version']}}
-          {%- endif %}
-          hsrp {{l3_interface['hsrp_group']}}
-          {%- if l3_interface['hsrp_preempt'] == True %}
-          preempt
-          {%- endif %}
-          {%- if l3_interface['hsrp_priority'] %}
-          priotiy {{l3_interface['hsrp_priority']}}
-          {%- endif %}
-          address {{l3_interface['hsrp_ip']}}
-        !
-        {%- endif %}
-        {%- endfor %}
-        '''
+{%- for l3_interface in l3_interfaces %}
+interface {{l3_interface['interface']}}
+ {%- if vrf != None %}
+ vrf {{vrf}}
+ {%- endif %}
+ {%- if l3_interface['description'] != None %}
+ description {{l3_interface['description']}}
+ {%- endif %}
+ {%- if l3_interface['ipv4'] != None %}
+ ipv4 address {{l3_interface['ipv4']}} {{l3_interface['netmask']}}
+ {%- endif %}
+ load-interval 30
+ {%- if l3_interface['arp_timeout'] %}
+ arp timeout {{l3_interface['arp_timeout']}}
+ {%- endif %}
+ {%- if l3_interfaces['shutdown'] == False %}
+ shutdown
+ {%- endif %}
+!
+{%- if l3_interface['hsrp_enable'] %}
+router hsrp
+ interface {{l3_interface['interface']}}
+  address-family ipv4
+  {%- if l3_interface['hsrp_version'] != None %}
+  hsrp version {{l3_interface['hsrp_version']}}
+  {%- endif %}
+  hsrp {{l3_interface['hsrp_group']}}
+  {%- if l3_interface['hsrp_preempt'] == True %}
+  preempt
+  {%- endif %}
+  {%- if l3_interface['hsrp_priority'] %}
+  priotiy {{l3_interface['hsrp_priority']}}
+  {%- endif %}
+  address {{l3_interface['hsrp_ip']}}
+!
+{%- endif %}
+{%- endfor %}
+'''
         self.static_route = '''
-        router static
-        {%- if vrf != None %} 
-         vrf {{vrf}}
-        {%- endif %}
-         address-family ipv4 unicast
-          {%- for network in networks %}
-          {{network['dst_network']}} {{network['netmask']}} {{network['gateway']}} {% if network['bfd_interval'] %}bfd fast-detect minimum-interval {{network['bfd_interval']}} multiplier {{network['bfd_multiplier']}}{% endif %} {% if network['tag'] != None %}tag {{network['tag']}}{% endif %} {% if network['description'] != None %}description {{network['description']}}{% endif %}
-          {%- endfor %}
-        '''
+router static
+{%- if vrf != None %} 
+ vrf {{vrf}}
+{%- endif %}
+ address-family ipv4 unicast
+  {%- for network in networks %}
+  {{network['dst_network']}} {{network['netmask']}} {% if network['interface'] %}{{network['interface']}}{% endif %} {{network['gateway']}} {% if network['bfd_interval'] %}bfd fast-detect minimum-interval {{network['bfd_interval']}} multiplier {{network['bfd_multiplier']}}{% endif %} {% if network['tag'] != None %}tag {{network['tag']}}{% endif %} {% if network['description'] != None %}description {{network['description']}}{% endif %}
+  {%- endfor %}
+!
+'''
     
     def xr_static_route(self, vrf=None, networks=[], l3_interfaces=[], bfd=[]):
         static_route = Template(self.static_route)
         network_routes = []
         for network in networks:
             # bfd configuration detection
+            bfd_param = {}
             for interface in l3_interfaces:
                 ip_net = ip_interface(interface['ipv4']+'/'+interface['netmask'])
                 if network['gateway'] in [d['gateway'] for d in bfd] and IPv4Address(network['gateway']) in ip_net.network and interface['bfd_interval']:
                     network['bfd_interval'] = interface['bfd_interval']
                     network['bfd_multiplier'] = interface['bfd_multiplier']
+                    continue
+            
             network_routes.append(network)
         result = static_route.render(vrf=vrf, networks=network_routes)
         return result
+        
 
-    def xr_trunk_interface(self, interface=None, description=None, mode='access', vlan=[], native=None, protocol=None):
-        data_trunk = {
-            'interface' : interface,
-            'description' : description,
-            'native' : native
-        }
+    def xr_trunk_interface(self, trunk_interfaces=[], l3_interfaces=[]):
+        trunk_interface_1 = Template(self.l2_trunk_template_1)
+        trunk_interface_2 = Template(self.l2_trunk_template_2)
+        l2vpn = Template(self.l2vpn_template)
+        vlans = []
         result = str()
-        for vl in vlan:
-            trunk_interface = Template(self.l2_trunk_template)
-            result += trunk_interface.render(**data_trunk, vlan=vl)
+        for interface in trunk_interfaces:
+            for vlan in interface['vlan']:
+                vlans.append(vlan)
+                interface_vlan = [d for d in l3_interfaces if 'BVI'+vlan == d['interface']]
+                if len(interface_vlan) > 0:
+                    result += trunk_interface_1.render(interface=interface, vlan=vlan, interface_vlan=interface_vlan[0])
+                else:
+                    result += trunk_interface_2.render(interface=interface, vlan=vlan)
+        
+        for vl in set(vlans):
+            interfaces_vl = []
+            for interface in trunk_interfaces:
+                if vl in interface['vlan']:
+                    interfaces_vl.append(interface['interface'])
+            result += l2vpn.render(vlan=vl, interfaces=interfaces_vl)
+
         return result
             
     def xr_l3_interface(self, vrf=None, l3_interfaces=[]):
@@ -178,7 +208,7 @@ class xe2xr():
     def find_l3_interface(self, vrf='default'):
         interfaces = []
         if vrf != 'default':
-            interfaces_cmd = self.ciscoparse.find_objects_w_child(parentspec=r'interface', childspec=r'ip vrf forwarding %s' % vrf)
+            interfaces_cmd = self.ciscoparse.find_objects_w_child(parentspec=r'interface', childspec=r'ip vrf forwarding %s\b' % vrf)
         else:
             interfaces_cmd = self.ciscoparse.find_objects_w_child(parentspec=r'interface', childspec=r'ip address')
 
@@ -244,7 +274,7 @@ class xe2xr():
     
     def find_static_route(self, vrf='default'):
         if vrf != 'default':
-            static_route_cmd = self.ciscoparse.find_objects(r'ip route vrf %s' % vrf)
+            static_route_cmd = self.ciscoparse.find_objects(r'ip route vrf %s ' % vrf)
         else:
             static_route_cmd = self.ciscoparse.find_objects(r'ip route [^(vrf)]')
         static_routes = list()
@@ -254,25 +284,27 @@ class xe2xr():
                 'dst_network' : None,
                 'netmask' : None,
                 'gateway' : None,
+                'interface' : None,
                 'description' : None,
                 'tag' : None
             }
 
             vrf = re.search('ip route vrf (\S+)', static_route.text)
-            dst_network = re.search('ip route\s?(vrf)?\s?(\S*) (\d+\.\d+\.\d+\.\d+) (\d+\.\d+\.\d+\.\d+) (\d+\.\d+\.\d+\.\d+)', static_route.text)
-            tag = re.search('ip route\s?(vrf)?\s?(\S*) (\d+\.\d+\.\d+\.\d+) (\d+\.\d+\.\d+\.\d+) (\d+\.\d+\.\d+\.\d+) tag (\d+)', static_route.text)
-            description = re.search('ip route\s?(vrf)?\s?(\S*) (\d+\.\d+\.\d+\.\d+) (\d+\.\d+\.\d+\.\d+) (\d+\.\d+\.\d+\.\d+)\s?(tag)?\s?(\d*)\s?name (\S+)', static_route.text)
+            dst_network = re.search('ip route\s?(vrf)?\s?(\S*) (\d+\.\d+\.\d+\.\d+) (\d+\.\d+\.\d+\.\d+) (Vlan\S+|Giga\S+|TenGiga\S+)?\s?(\d+\.\d+\.\d+\.\d+)', static_route.text)
+            tag = re.search('ip route\s?(vrf)?\s?(\S*) (\d+\.\d+\.\d+\.\d+) (\d+\.\d+\.\d+\.\d+) (Vlan\S+|Giga\S+|TenGiga\S+)?\s?(\d+\.\d+\.\d+\.\d+) tag (\d+)', static_route.text)
+            description = re.search('ip route\s?(vrf)?\s?(\S*) (\d+\.\d+\.\d+\.\d+) (\d+\.\d+\.\d+\.\d+) (Vlan\S+|Giga\S+|TenGiga\S+)?\s?(\d+\.\d+\.\d+\.\d+)\s?(tag)?\s?(\d*)\s?name (\S+)', static_route.text)
             
             if vrf:
                 route['vrf'] = vrf.group(1)
             if dst_network:
                 route['dst_network'] = dst_network.group(3)
                 route['netmask'] = dst_network.group(4)
-                route['gateway'] = dst_network.group(5)
+                route['interface'] = dst_network.group(5).replace('Vlan','BVI')
+                route['gateway'] = dst_network.group(6)
             if description:
-                route['description'] = description.group(8)[:30]
+                route['description'] = description.group(9)[:30]
             if tag:
-                route['tag'] = tag.group(6)
+                route['tag'] = tag.group(7)
             
             static_routes.append(route)
         
@@ -281,29 +313,40 @@ class xe2xr():
 def main():
     config = xe2xr(file=argv[1])
     vrfes = config.find_vrf_interface()
+    #print(vrfes)
     l2_interfaces = config.find_l2_interface()
     bfd_static = config.find_bfd_static_route()
     xr_template = xe2xr_template()
-    if len(vrfes) > 0:
-        for vrf in vrfes:
-            print('------------ vrf %s -------------' % vrf)
-            #print('*** l3 interface ***')
-            l3_interfaces = config.find_l3_interface(vrf)
-            #pprint(l3_interfaces)
-            #l3_interfaces_template = xr_template.xr_l3_interface(vrf=vrf, l3_interfaces=l3_interfaces)
-            #print(l3_interfaces_template)
-            
-            print('*** static route ***')
-            static_routes = config.find_static_route(vrf)
-            static_route_template = xr_template.xr_static_route(vrf=vrf, networks=static_routes, l3_interfaces=l3_interfaces, bfd=bfd_static)
-            print(static_route_template)
-            #print(static_route_template)
-    '''
-    print('------------ layer 2 interfaces --------------')
-    for l2_interface in l2_interfaces:
-        l2_interface_template = xr_template.xr_trunk_interface(**l2_interface)
-        print(l2_interface_template)
-    '''
+    #pprint(bfd_static)
 
+    with open('xr_config.txt','w') as log:
+        
+        print('--------------------------- layer 2 interfaces ----------------------------------')
+        
+        vlan_interfaces = config.find_l3_interface()
+        l2_interface_template = xr_template.xr_trunk_interface(l2_interfaces, vlan_interfaces)
+        print(l2_interface_template)
+        log.write(l2_interface_template)
+        
+        if len(vrfes) > 0:
+            #l3 interfaces
+            for vrf in vrfes:
+                print('----------------------------- vrf %s -------------------------------' % vrf)
+                print('*** l3 interface ***')
+                l3_interfaces = config.find_l3_interface(vrf)
+                l3_interfaces_template = xr_template.xr_l3_interface(vrf=vrf, l3_interfaces=l3_interfaces)
+                print(l3_interfaces_template)
+                log.write(l3_interfaces_template)
+
+            #static routing
+            for vrf in vrfes:
+                l3_interfaces = config.find_l3_interface(vrf)
+                static_routes = config.find_static_route(vrf)
+                if len(static_routes) > 0:
+                    print('*** static route ***')
+                    static_route_template = xr_template.xr_static_route(vrf=vrf, networks=static_routes, l3_interfaces=l3_interfaces, bfd=bfd_static)
+                    print(static_route_template)
+                    log.write(static_route_template)
+   
 if __name__ == "__main__":
     main()
