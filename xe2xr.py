@@ -58,7 +58,7 @@ interface {{l3_interface['interface']}}
  arp timeout {{l3_interface['arp_timeout']}}
  {%- endif %}
  {%- if l3_interface['vlan'] %}
- encapsulation dot1q {{l3_interface['vlan']}}
+ encapsulation dot1Q {{l3_interface['vlan']}}
  {%- endif %}
  {%- if l3_interface['policy_input'] %}
  service-policy input {{l3_interface['policy_input']}}
