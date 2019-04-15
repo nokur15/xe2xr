@@ -50,11 +50,23 @@ interface {{l3_interface['interface']}}
  {%- if l3_interface['ipv4'] != None %}
  ipv4 address {{l3_interface['ipv4']}} {{l3_interface['netmask']}}
  {%- endif %}
+ {%- if l3_interface['vlan']%}
+ {%- else %}
  load-interval 30
+ {%- endif %}
  {%- if l3_interface['arp_timeout'] %}
  arp timeout {{l3_interface['arp_timeout']}}
  {%- endif %}
- {%- if l3_interfaces['shutdown'] == False %}
+ {%- if l3_interface['vlan'] %}
+ encapsulation dot1q {{l3_interface['vlan']}}
+ {%- endif %}
+ {%- if l3_interface['policy_input'] %}
+ service-policy input {{l3_interface['policy_input']}}
+ {%- endif %}
+ {%- if l3_interface['policy_output'] %}
+ service-policy output {{l3_interface['policy_output']}}
+ {%- endif %}
+ {%- if l3_interface['shutdown'] == True %}
  shutdown
  {%- endif %}
 !
@@ -267,9 +279,19 @@ class xe2xr():
                     bfd = re.search('bfd interval (\d+) min_rx (\d+) multiplier (\d+)', cmd.text)
                     interface['bfd_interval'] = bfd.group(1)
                     interface['bfd_multiplier'] = bfd.group(3)
+                elif 'encapsulation dot1Q' in cmd.text:
+                    vlan = re.search('encapsulation dot1Q (\d+)', cmd.text)
+                    interface['vlan'] = vlan.group(1)
+                elif 'service-policy input' in cmd.text:
+                    policy_input = re.search('service-policy input (\S+)', cmd.text)
+                    interface['policy_input'] = policy_input.group(1)
+                elif 'service-policy output' in cmd.text:
+                    policy_output = re.search('service-policy output (\S+)', cmd.text)
+                    interface['policy_output'] = policy_output.group(1)
             if hsrp['hsrp_enable'] == True:
                 interface.update(hsrp)
             interfaces.append(interface)
+
         return interfaces
     
     def find_static_route(self, vrf='default'):
@@ -323,6 +345,7 @@ def main():
     with open('xr_config.txt','w') as log:
         
         print('--------------------------- layer 2 interfaces ----------------------------------')
+        log.write('--------------------------- layer 2 interfaces ----------------------------------')
         
         vlan_interfaces = config.find_l3_interface()
         l2_interface_template = xr_template.xr_trunk_interface(l2_interfaces, vlan_interfaces)
@@ -333,7 +356,9 @@ def main():
             #l3 interfaces
             for vrf in vrfes:
                 print('----------------------------- vrf %s -------------------------------' % vrf)
+                log.write('----------------------------- vrf %s -------------------------------' % vrf)
                 print('*** l3 interface ***')
+                log.write('*** l3 interface ***')
                 l3_interfaces = config.find_l3_interface(vrf)
                 l3_interfaces_template = xr_template.xr_l3_interface(vrf=vrf, l3_interfaces=l3_interfaces)
                 print(l3_interfaces_template)
@@ -345,6 +370,7 @@ def main():
                 static_routes = config.find_static_route(vrf)
                 if len(static_routes) > 0:
                     print('*** static route ***')
+                    log.write('*** static route ***')
                     static_route_template = xr_template.xr_static_route(vrf=vrf, networks=static_routes, l3_interfaces=l3_interfaces, bfd=bfd_static)
                     print(static_route_template)
                     log.write(static_route_template)
