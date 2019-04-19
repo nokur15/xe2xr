@@ -4,7 +4,17 @@ import re
 from pprint import pprint
 from jinja2 import Template
 from ipaddress import IPv4Address, ip_interface
+from openpyxl.reader.excel import load_workbook
 
+def XLSXDictReader(f):
+    book = load_workbook(f)
+    sheet = book.active
+    rows = sheet.max_row
+    cols = sheet.max_column
+    def item(i, j):
+        return (sheet.cell(row=1, column=j).value, sheet.cell(row=i, column=j).value)
+    return (dict(item(i, j) for j in range(1, cols + 1)) for i in range(2, rows + 1))
+    
 class xe2xr_template():
     def __init__(self):
         self.l2_trunk_template_1 = '''
@@ -335,6 +345,11 @@ class xe2xr():
 
 def main():
     config = xe2xr(file=argv[1])
+    try:
+        db = XLSXDictReader(argv[2])
+    except:
+        db = None
+    print(len(argv)) 
     vrfes = config.find_vrf_interface()
     #print(vrfes)
     l2_interfaces = config.find_l2_interface()
@@ -343,37 +358,97 @@ def main():
     #pprint(bfd_static)
 
     with open('xr_config.txt','w') as log:
-        
         print('--------------------------- layer 2 interfaces ----------------------------------')
-        log.write('--------------------------- layer 2 interfaces ----------------------------------')
+        log.write('\n--------------------------- layer 2 interfaces ----------------------------------')
         
         vlan_interfaces = config.find_l3_interface()
-        l2_interface_template = xr_template.xr_trunk_interface(l2_interfaces, vlan_interfaces)
-        print(l2_interface_template)
-        log.write(l2_interface_template)
-        
+        if db != None:
+            l2_updates = list()
+            for i in l2_interfaces:
+                for d in db:
+                    old = d['old_interface']
+                    new = d['new_interface']
+                    if old in i['interface']:
+                        port = i['interface']
+                        i['interface'] = port.replace(old,new)
+                        #print(i['interface'])
+                        break
+                l2_updates.append(i)
+            l2_interface_template = xr_template.xr_trunk_interface(l2_updates, vlan_interfaces)
+            print(l2_interface_template)
+            log.write(l2_interface_template)
+        else:
+            l2_interface_template = xr_template.xr_trunk_interface(l2_interfaces, vlan_interfaces)
+            print(l2_interface_template)
+            log.write(l2_interface_template)
+
         if len(vrfes) > 0:
             #l3 interfaces
             for vrf in vrfes:
+                try:
+                    db = XLSXDictReader(argv[2])
+                except:
+                    db = None
                 print('----------------------------- vrf %s -------------------------------' % vrf)
-                log.write('----------------------------- vrf %s -------------------------------' % vrf)
+                log.write('\n----------------------------- vrf %s -------------------------------' % vrf)
+                #print(db)
                 print('*** l3 interface ***')
-                log.write('*** l3 interface ***')
+                log.write('\n*** l3 interface ***')
                 l3_interfaces = config.find_l3_interface(vrf)
-                l3_interfaces_template = xr_template.xr_l3_interface(vrf=vrf, l3_interfaces=l3_interfaces)
-                print(l3_interfaces_template)
-                log.write(l3_interfaces_template)
+                if db != None:
+                    l3_updates = list()
+                    for i in l3_interfaces:
+                        for j in db:
+                            old = j['old_interface']
+                            new = j['new_interface']
+                            if old in i['interface']:
+                                i['interface'] = i['interface'].replace(old, new)
+                                #print(i['interface'])
+                        l3_updates.append(i)
+                    #print(l3_updates)
+                    l3_interfaces_template = xr_template.xr_l3_interface(vrf=vrf, l3_interfaces=l3_updates)
+                    print(l3_interfaces_template)
+                    log.write(l3_interfaces_template)
+                else:
+                    print(l3_interfaces)
+                    #print(l3_interfaces)
+                    l3_interfaces_template = xr_template.xr_l3_interface(vrf=vrf, l3_interfaces=l3_interfaces)
+                    print(l3_interfaces_template)
+                    log.write(l3_interfaces_template)
 
             #static routing
             for vrf in vrfes:
+                print('----------------------------- vrf %s -------------------------------' % vrf)
+                log.write('\n----------------------------- vrf %s -------------------------------' % vrf)
+                try:
+                    db = XLSXDictReader(argv[2])
+                except:
+                    db = None
                 l3_interfaces = config.find_l3_interface(vrf)
                 static_routes = config.find_static_route(vrf)
                 if len(static_routes) > 0:
-                    print('*** static route ***')
-                    log.write('*** static route ***')
+                    #print('*** static route ***')
+                    log.write('\n*** static route ***')
+                if db != None:
+                    l3_updates = list()
+                    for i in l3_interfaces:
+                        for d in db:
+                            old = d['old_interface']
+                            new = d['new_interface']
+                            if old in i['interface']:
+                                port = i['interface']
+                                i['interface'] = port.replace(old,new)
+                                #print(i['interface'])
+                                break
+                        l3_updates.append(i)
+                    static_route_template = xr_template.xr_static_route(vrf=vrf, networks=static_routes, l3_interfaces=l3_updates, bfd=bfd_static)
+                    #print(l3_updates)
+                    print(static_route_template)
+                    log.write(static_route_template)
+                else:
                     static_route_template = xr_template.xr_static_route(vrf=vrf, networks=static_routes, l3_interfaces=l3_interfaces, bfd=bfd_static)
                     print(static_route_template)
                     log.write(static_route_template)
-   
+
 if __name__ == "__main__":
     main()
