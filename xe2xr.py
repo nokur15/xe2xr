@@ -17,6 +17,15 @@ def XLSXDictReader(f):
     
 class xe2xr_template():
     def __init__(self):
+        self.l2_trunk_interface = '''
+interface {{interface['interface']}}
+ {%- if interface['description'] %}
+ description {{interface['description']}}
+ {%- endif %}
+ load-interval 30
+!
+'''
+
         self.l2_trunk_template_1 = '''
 interface {{interface['interface']}}.{{vlan}} l2transport
  {%- if interface_vlan['description'] %}
@@ -34,7 +43,7 @@ interface {{interface['interface']}}.{{vlan}} l2transport
  encapsulation dot1q {{vlan}} exact
  rewrite ingress tag pop {{interface['native']}} symmetric
 !
-        '''
+'''
         self.l2vpn_template = '''
 l2vpn
  bridge group BVI
@@ -51,11 +60,14 @@ l2vpn
         self.l3_interface_template = '''
 {%- for l3_interface in l3_interfaces %}
 interface {{l3_interface['interface']}}
- {%- if vrf != None %}
- vrf {{vrf}}
- {%- endif %}
  {%- if l3_interface['description'] != None %}
  description {{l3_interface['description']}}
+ {%- endif %}
+ {%- if l3_interface['vlan'] %}
+ encapsulation dot1Q {{l3_interface['vlan']}}
+ {%- endif %}
+ {%- if vrf != None %}
+ vrf {{vrf}}
  {%- endif %}
  {%- if l3_interface['ipv4'] != None %}
  ipv4 address {{l3_interface['ipv4']}} {{l3_interface['netmask']}}
@@ -66,9 +78,6 @@ interface {{l3_interface['interface']}}
  {%- endif %}
  {%- if l3_interface['arp_timeout'] %}
  arp timeout {{l3_interface['arp_timeout']}}
- {%- endif %}
- {%- if l3_interface['vlan'] %}
- encapsulation dot1Q {{l3_interface['vlan']}}
  {%- endif %}
  {%- if l3_interface['policy_input'] %}
  service-policy input {{l3_interface['policy_input']}}
@@ -132,10 +141,12 @@ router static
     def xr_trunk_interface(self, trunk_interfaces=[], l3_interfaces=[]):
         trunk_interface_1 = Template(self.l2_trunk_template_1)
         trunk_interface_2 = Template(self.l2_trunk_template_2)
+        trunk_interface = Template(self.l2_trunk_interface)
         l2vpn = Template(self.l2vpn_template)
         vlans = []
         result = str()
         for interface in trunk_interfaces:
+            result += trunk_interface.render(interface=interface)
             for vlan in interface['vlan']:
                 vlans.append(vlan)
                 interface_vlan = [d for d in l3_interfaces if 'BVI'+vlan == d['interface']]
@@ -150,7 +161,6 @@ router static
                 if vl in interface['vlan']:
                     interfaces_vl.append(interface['interface'])
             result += l2vpn.render(vlan=vl, interfaces=interfaces_vl)
-
         return result
             
     def xr_l3_interface(self, vrf=None, l3_interfaces=[]):
@@ -395,15 +405,21 @@ def main():
                 print('*** l3 interface ***')
                 log.write('\n*** l3 interface ***')
                 l3_interfaces = config.find_l3_interface(vrf)
+                #print(l3_interfaces)
+
                 if db != None:
+                    db = [ j for j in db]
                     l3_updates = list()
                     for i in l3_interfaces:
                         for j in db:
                             old = j['old_interface']
                             new = j['new_interface']
+                            #print(i['interface'])
+                            #print(old)
                             if old in i['interface']:
-                                i['interface'] = i['interface'].replace(old, new)
+                                i['interface'] = i['interface'].replace(old,new)
                                 #print(i['interface'])
+                                break
                         l3_updates.append(i)
                     #print(l3_updates)
                     l3_interfaces_template = xr_template.xr_l3_interface(vrf=vrf, l3_interfaces=l3_updates)
@@ -430,14 +446,14 @@ def main():
                     #print('*** static route ***')
                     log.write('\n*** static route ***')
                 if db != None:
+                    db = [ j for j in db ]
                     l3_updates = list()
                     for i in l3_interfaces:
                         for d in db:
                             old = d['old_interface']
                             new = d['new_interface']
                             if old in i['interface']:
-                                port = i['interface']
-                                i['interface'] = port.replace(old,new)
+                                i['interface'] = i['interface'].replace(old,new)
                                 #print(i['interface'])
                                 break
                         l3_updates.append(i)
