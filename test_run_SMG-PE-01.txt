@@ -1,0 +1,1212 @@
+﻿SMG-PE-01#sh run
+Building configuration...
+
+Current configuration : 30566 bytes
+!
+! Last configuration change at 18:38:46 WIB Tue Mar 22 2022 by oandriyan
+! NVRAM config last updated at 02:49:53 WIB Thu May 12 2022 by lnnoc
+!
+version 16.9
+no service pad
+service tcp-keepalives-in
+service tcp-keepalives-out
+service timestamps debug datetime msec localtime show-timezone
+service timestamps log datetime msec localtime show-timezone
+service sequence-numbers
+service unsupported-transceiver
+platform loadbalance max-paths 8
+no platform punt-keepalive disable-kernel-core
+platform bfd-debug-trace 1
+platform xconnect load-balance-hash-algo mac-ip-instanceid
+platform qos-policer queue 3 20000000 16000000
+platform tcam-parity-error enable
+platform tcam-threshold alarm-frequency 1
+!
+hostname SMG-PE-01
+!
+boot-start-marker
+boot system bootflash:asr920-universalk9_npe.16.09.03.SPA.bin
+boot-end-marker
+!
+!
+vrf definition Mgmt-intf
+ !
+ address-family ipv4
+ exit-address-family
+ !
+ address-family ipv6
+ exit-address-family
+!
+logging buffered 512000
+no logging console
+enable secret 5 $1$CzY9$ZZVzFLbHPhVftVRSvsdn00
+!
+aaa new-model
+!
+!
+aaa authentication login default group tacacs+ local
+aaa authentication login telnet group tacacs+ local
+aaa authentication login console group tacacs+ local
+aaa authentication enable default group tacacs+ enable
+aaa authorization exec default group tacacs+ local 
+aaa authorization commands 1 default group tacacs+ local 
+aaa authorization commands 15 default group tacacs+ local 
+aaa accounting update newinfo
+aaa accounting exec default start-stop group tacacs+
+aaa accounting commands 0 default start-stop group tacacs+
+aaa accounting commands 1 default start-stop group tacacs+
+aaa accounting commands 7 default start-stop group tacacs+
+aaa accounting commands 15 default start-stop group tacacs+
+aaa accounting network 15 start-stop group tacacs+
+aaa accounting connection 15 start-stop group tacacs+
+aaa accounting system default start-stop group tacacs+
+!
+!
+!
+!
+!
+aaa session-id common
+clock timezone WIB 7 0
+no ip source-route
+!
+ip vrf ngn-ftth-iptv-fo
+!
+ip vrf smg-corp-iptv-fo
+ rd 10.255.101.184:908
+ mdt default 239.232.0.3
+ mdt data 239.232.3.0 0.0.0.255 threshold 1
+ mdt data threshold 1
+ route-target export 23700:908
+ route-target import 23700:908
+!
+ip vrf smg-corp-linknet01-fo
+ rd 10.255.101.184:20000
+ route-target export 23700:20000
+ route-target import 23700:35000
+ route-target import 23700:35100
+ route-target import 23700:35200
+ route-target import 23700:0
+!
+ip vrf smg-ftth-iptv-fo
+ rd 10.255.101.184:907
+ mdt default 239.232.0.2
+ mdt data 239.232.2.0 0.0.0.255 threshold 1
+ mdt data threshold 1
+ route-target export 23700:907
+ route-target import 23700:907
+!
+ip vrf smg-ftth-vod01-fo
+ rd 10.255.101.184:909
+ route-target export 23700:909
+ route-target import 23700:909
+ route-target import 23700:11
+!
+ip vrf smg-nms-ftth01-fo
+ rd 10.255.101.184:906
+ route-target export 23700:906
+ route-target import 23700:906
+!
+ip vrf smg-nms-me1200-fo
+ rd 10.255.101.184:15050
+ route-target export 23700:15050
+ route-target import 23700:15050
+!
+ip vrf smg-nms-metro01-fo
+ rd 10.255.101.184:15020
+ route-target export 23700:15020
+ route-target import 23700:15020
+!
+ip vrf smg-nms-rg01-fo
+ rd 10.255.101.184:1100
+ route-target export 23700:1100
+ route-target import 23700:1100
+!
+ip vrf smg-nms-ups01-fo
+ rd 10.255.101.184:15040
+ route-target export 23700:15040
+ route-target import 23700:15040
+ route-target import 23700:5066
+!
+ip vrf smr-nms-fiber01-fo
+ rd 10.255.101.184:15000
+ route-target export 23700:15000
+ route-target import 23700:15000
+ route-target import 23700:5066
+!
+ip vrf test-ping
+!
+!
+!
+!
+!
+!
+!
+ip name-server 10.255.4.9
+ip domain name link.net.id
+ip multicast-routing distributed
+ip multicast-routing vrf smg-corp-iptv-fo distributed
+ip multicast-routing vrf smg-ftth-iptv-fo distributed
+ip multicast multipath s-g-hash next-hop-based
+ip multicast route-limit 65536 1000
+ip multicast vrf smg-corp-iptv-fo multipath s-g-hash next-hop-based
+ip multicast vrf smg-corp-iptv-fo route-limit 1024 768
+ip multicast vrf smg-ftth-iptv-fo multipath s-g-hash next-hop-based
+ip multicast vrf smg-ftth-iptv-fo route-limit 1024 768
+!
+!
+!
+login on-success log
+!
+!
+!
+!
+!
+!
+!
+mpls label protocol ldp
+no mpls ip propagate-ttl 
+mpls ldp explicit-null
+mpls ldp graceful-restart
+mpls ldp igp sync holddown 30000
+mpls ldp label
+ allocate global prefix-list LOOPBACK
+mpls ldp discovery targeted-hello accept
+mpls traffic-eng tunnels
+multilink bundle-name authenticated
+!
+!
+!
+license udi pid ASR-920-24SZ-M sn CAT2407V0XH
+license boot level advancedmetroipaccess
+no license smart enable
+archive
+ log config
+  logging enable
+  logging size 500
+  notify syslog contenttype plaintext
+!
+!
+spanning-tree extend system-id
+sdm prefer video 
+diagnostic bootup level minimal
+!
+!
+username fmnoc secret 5 $1$vjHa$c4haweiMMqqD8JD4sMfag.
+!
+redundancy
+!
+!
+!
+!
+!
+transceiver type all
+ monitoring
+!
+!
+!
+class-map match-any CM_VIDEO
+ match mpls experimental topmost 5 
+ match dscp ef 
+class-map match-any CM_P1-DATA
+ match mpls experimental topmost 2 
+class-map match-any CM_P2-DATA
+ match mpls experimental topmost 1 
+class-map match-any CM_CONTROL
+ match mpls experimental topmost 6  7 
+ match dscp cs6  cs7 
+class-map match-any CM_CRITICAL
+ match mpls experimental topmost 4 
+!
+policy-map LKL-10Mbps
+ class class-default
+  shape average 10240000   
+policy-map PM_VIDEO_INGRESS
+ class class-default
+  set dscp ef
+  set mpls experimental imposition 5
+policy-map PM_CORE_EGRESS_1G
+ class CM_CONTROL
+  priority level 1
+  police cir percent 1
+ class CM_VIDEO
+  priority level 2
+  police cir percent 90
+ class CM_CRITICAL
+  bandwidth percent 3 
+  random-detect
+ class CM_P1-DATA
+  bandwidth percent 3 
+  random-detect
+  queue-limit 150000 us
+ class CM_P2-DATA
+  bandwidth percent 1 
+  random-detect
+ class class-default
+  random-detect
+  queue-limit 5000 us
+policy-map PM_BEST-EFFORT_INGRESS
+ class class-default
+  set mpls experimental imposition 0
+policy-map PM_SHAPER_CORE_EGRESS_1G
+ class class-default
+  shape average 950000000   
+   service-policy PM_CORE_EGRESS_1G
+policy-map PM_CORE_EGRESS_10G
+ class CM_CONTROL
+  priority level 1
+  police cir percent 1
+ class CM_VIDEO
+  priority level 2
+  police cir percent 45
+ class CM_CRITICAL
+  bandwidth percent 10 
+  random-detect
+ class CM_P1-DATA
+  bandwidth percent 30 
+  random-detect
+  queue-limit 3000 us
+ class CM_P2-DATA
+  bandwidth percent 10 
+  random-detect
+ class class-default
+  random-detect
+  queue-limit 1500 us
+policy-map PM_SHAPER_CORE_EGRESS_10G
+ class class-default
+  shape average 9800000000   
+   service-policy PM_CORE_EGRESS_10G
+policy-map PM_CRITICAL_INGRESS
+ class class-default
+  set mpls experimental imposition 4
+policy-map PM_P1-DATA_INGRESS
+ class class-default
+  set mpls experimental imposition 2
+policy-map PM_P2-DATA_INGRESS
+ class class-default
+  set mpls experimental imposition 1
+policy-map PM_CONTROL_INGRESS
+ class class-default
+  set mpls experimental imposition 6
+!
+l2 vfi 11 manual 
+ vpn id 11
+ bridge-domain 11
+ neighbor 10.255.101.185 1011 encapsulation mpls
+!
+l2 vfi 122 manual 
+ vpn id 122
+ bridge-domain 122
+ neighbor 10.255.10.61 encapsulation mpls
+!
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Loopback0
+ ip address 10.255.101.184 255.255.255.255
+ ip pim sparse-mode
+ ip ospf network point-to-point
+!
+interface Port-channel10
+ description [DOWNLINK][NGN-PE-01][Po10][REDUNDANT][Direct Core]
+ dampening
+ mtu 9202
+ ip address 192.168.223.41 255.255.255.252
+ ip pim sparse-mode
+ ip ospf authentication message-digest
+ ip ospf message-digest-key 1 md5 7 060B1F2247584A161607144A
+ ip ospf network point-to-point
+ ip ospf bfd
+ load-interval 30
+ negotiation auto
+ mpls ip
+ mpls traffic-eng tunnels
+ bfd interval 200 min_rx 200 multiplier 3
+ ip rsvp bandwidth
+!
+interface Port-channel20
+ description [DOWNLINK][BYK-PE-01][Po10][PRIMARY][Rack 1 OTB Primary Port 37/38]
+ dampening
+ mtu 9202
+ ip address 192.168.223.49 255.255.255.252
+ ip pim sparse-mode
+ ip ospf authentication message-digest
+ ip ospf message-digest-key 1 md5 7 13080711001A472538342E72
+ ip ospf network point-to-point
+ ip ospf bfd
+ load-interval 30
+ carrier-delay up msec 200
+ carrier-delay down msec 200
+ negotiation auto
+ mpls ip
+ mpls traffic-eng tunnels
+ bfd interval 300 min_rx 300 multiplier 3
+ ip rsvp bandwidth
+!
+interface Port-channel21
+ description [DOWNLINK][SMG-OLT-02][DIRECT]
+ no ip address
+ shutdown
+ negotiation auto
+ service instance 100 ethernet
+  description to MGMT-OLT
+  encapsulation dot1q 100
+  rewrite ingress tag pop 1 symmetric
+  bridge-domain 100
+ !
+ service instance 1000 ethernet
+  description VPLS PPPoE FTTH
+  encapsulation dot1q 1000
+  rewrite ingress tag pop 1 symmetric
+  bridge-domain 1000
+ !
+ service instance 2000 ethernet
+  description VIDEO Multicast
+  encapsulation dot1q 2000
+  rewrite ingress tag pop 1 symmetric
+  service-policy input PM_P1-DATA_INGRESS
+  bridge-domain 2000
+ !
+ service instance 2001 ethernet
+  description DHCP FTTH
+  encapsulation dot1q 2001
+  rewrite ingress tag pop 1 symmetric
+  bridge-domain 2001
+ !
+!
+interface GigabitEthernet0/0/0
+ description ACCESS_IT_KRWC
+ mtu 9000
+ no ip address
+ negotiation auto
+ no keepalive
+ service instance 1 ethernet
+  encapsulation default
+  xconnect 10.255.17.131 102 encapsulation mpls
+ !
+!
+interface GigabitEthernet0/0/1
+ description TRUNK_TO_NNI_FIBERSTAR_[MJPT-PE-01(CID:CRT2006009471),SRT-PE-01(CID:CRT2006009478)]
+ mtu 8000
+ no ip address
+ negotiation auto
+ service instance 344 ethernet
+  description [DOWNLINK][MJPT-PE-01][VIA_FIBESTAR_(CID:CRT2006009471)]
+  encapsulation dot1q 344
+  rewrite ingress tag pop 1 symmetric
+  service-policy input PM_BEST-EFFORT_INGRESS
+  bridge-domain 344
+ !
+ service instance 345 ethernet
+  description [DOWNLINK][SRT-PE-01][VIA_FIBESTAR_(CID:CRT2006009478)]
+  encapsulation dot1q 345
+  rewrite ingress tag pop 1 symmetric
+  service-policy input PM_BEST-EFFORT_INGRESS
+  bridge-domain 345
+ !
+!
+interface GigabitEthernet0/0/2
+ description SMGSW-CCTV-01
+ no ip address
+ shutdown
+ negotiation auto
+ service instance 15 ethernet
+  encapsulation untagged
+  bridge-domain 15
+ !
+!
+interface GigabitEthernet0/0/3
+ description IT KRWC - HUB SMG L2 VPLS (WLC)
+ mtu 9000
+ no ip address
+ negotiation auto
+ no keepalive
+ service instance 1 ethernet
+  encapsulation untagged
+  xconnect 10.255.17.131 10041 encapsulation mpls
+ !
+!
+interface GigabitEthernet0/0/4
+ description ACCESS_I00357-001_Indah_Bumi_Lestari_(IPTV_MULTICAST)[SMG-IBL-ME-01-I00357]
+ no ip address
+ negotiation auto
+ service instance 1 ethernet
+  encapsulation untagged
+  l2protocol peer lldp
+  bridge-domain 11
+ !
+ service instance 11 ethernet
+  description Management ME1200
+  encapsulation dot1q 11
+  rewrite ingress tag pop 1 symmetric
+  service-policy input PM_P2-DATA_INGRESS
+  bridge-domain 11
+ !
+ service instance 2002 ethernet
+  description I00357-001_Indah_Bumi_Lestari_(IPTV_MULTICAST)
+  encapsulation dot1q 2002
+  rewrite ingress tag pop 1 symmetric
+  service-policy input PM_VIDEO_INGRESS
+  bridge-domain 2002
+ !
+!
+interface GigabitEthernet0/0/5
+ description C00444-001_Cipta_Pilar_Persada_[SMG-CORDOVA-ME-01-C00444]
+ no ip address
+ negotiation auto
+ service instance 1 ethernet
+  encapsulation untagged
+  l2protocol peer lldp
+  bridge-domain 11
+ !
+ service instance 11 ethernet
+  description Management ME1200
+  encapsulation dot1q 11
+  rewrite ingress tag pop 1 symmetric
+  service-policy input PM_P2-DATA_INGRESS
+  bridge-domain 11
+ !
+ service instance 801 ethernet
+  description C00444-001_Cipta_Pilar_Persada
+  encapsulation dot1q 801
+  rewrite ingress tag pop 1 symmetric
+  service-policy input PM_P1-DATA_INGRESS
+  bridge-domain 801
+ !
+!
+interface GigabitEthernet0/0/6
+ description ACCESS_G00006_001_Gereja_Mawar_Sharon_Semarang_(SMG-SHARON-ME-01-G00006)
+ no ip address
+ negotiation auto
+ service instance 1 ethernet
+  encapsulation untagged
+  l2protocol peer lldp
+  bridge-domain 11
+ !
+ service instance 11 ethernet
+  description Management ME1200
+  encapsulation dot1q 11
+  rewrite ingress tag pop 1 symmetric
+  service-policy input PM_P2-DATA_INGRESS
+  bridge-domain 11
+ !
+ service instance 802 ethernet
+  description G00006_001_Gereja_Mawar_Sharon_Semarang
+  encapsulation dot1q 802
+  rewrite ingress tag pop 1 symmetric
+  service-policy input PM_P1-DATA_INGRESS
+  bridge-domain 802
+ !
+!
+interface GigabitEthernet0/0/7
+ description [DOWNLINK][SMG-PE-11][Gi0/0/0/0][DIRECT]
+ dampening
+ mtu 9202
+ ip address 192.168.225.90 255.255.255.252
+ ip pim sparse-mode
+ ip ospf authentication message-digest
+ ip ospf message-digest-key 1 md5 7 13080711001A472538342E72
+ ip ospf network point-to-point
+ ip ospf bfd
+ load-interval 30
+ carrier-delay up msec 200
+ carrier-delay down msec 200
+ shutdown
+ negotiation auto
+ mpls ip
+ mpls traffic-eng tunnels
+ bfd interval 300 min_rx 300 multiplier 3
+ ip rsvp bandwidth
+!
+interface GigabitEthernet0/0/8
+ description ACCESS_N00110-008_Nindya_Karya_(BOD_4-5 Mar 2022)[SMG-BODNINDYA-ME-01-N00110]
+ no ip address
+ shutdown
+ negotiation auto
+ service instance 1 ethernet
+  encapsulation untagged
+  l2protocol peer lldp
+  bridge-domain 11
+ !
+ service instance 11 ethernet
+  description Management ME1200
+  encapsulation dot1q 11
+  rewrite ingress tag pop 1 symmetric
+  service-policy input PM_P2-DATA_INGRESS
+  bridge-domain 11
+ !
+ service instance 803 ethernet
+  encapsulation dot1q 803
+  rewrite ingress tag pop 1 symmetric
+  service-policy input PM_P2-DATA_INGRESS
+  bridge-domain 803
+ !
+!
+interface GigabitEthernet0/0/9
+ description TV SEMARANG ANALOG (TANGRAM)
+ no ip address
+ negotiation auto
+ service instance 122 ethernet
+  description TV SEMARANG ANALOG (TANGRAM)
+  encapsulation untagged
+  bridge-domain 122
+ !
+!
+interface GigabitEthernet0/0/10
+ description IPTV DVBT TANGRAM
+ no ip address
+ negotiation auto
+ service instance 2002 ethernet
+  description IPTV DVBT TANGRAM 
+  encapsulation untagged
+  bridge-domain 2002
+ !
+!
+interface GigabitEthernet0/0/11
+ description TV SEMARANG ANALOG (TANGRAM)
+ no ip address
+ negotiation auto
+ service instance 122 ethernet
+  description TV SEMARANG ANALOG (TANGRAM)
+  encapsulation untagged
+  bridge-domain 122
+ !
+!
+interface GigabitEthernet0/0/12
+ description BRAS-MGMT
+ no ip address
+ negotiation auto
+ service instance 13 ethernet
+  description MGMT-BRAS-PRI
+  encapsulation untagged
+  bridge-domain 13
+ !
+!
+interface GigabitEthernet0/0/13
+ description BRAS-MGMT
+ no ip address
+ negotiation auto
+ service instance 13 ethernet
+  description MGMT-BRAS-PRI
+  encapsulation untagged
+  bridge-domain 13
+ !
+!
+interface GigabitEthernet0/0/14
+ no ip address
+ shutdown
+ no negotiation auto
+ channel-group 21
+!
+interface GigabitEthernet0/0/15
+ no ip address
+ shutdown
+ no negotiation auto
+ channel-group 21
+!
+interface GigabitEthernet0/0/16
+ mtu 9202
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet0/0/17
+ description [DOWNLINK][APJIISMG-PE-01][Gi0/0/22]
+ dampening
+ mtu 9202
+ ip address 192.168.24.61 255.255.255.252
+ ip pim sparse-mode
+ ip ospf authentication message-digest
+ ip ospf message-digest-key 1 md5 7 13080711001A472538342E72
+ ip ospf network point-to-point
+ ip ospf bfd
+ load-interval 30
+ carrier-delay up msec 200
+ carrier-delay down msec 200
+ negotiation auto
+ mpls ip
+ mpls traffic-eng tunnels
+ service-policy output PM_CORE_EGRESS_1G
+!
+interface GigabitEthernet0/0/18
+ description [DOWNLINK][BYK-PE-01][Po10][[PRIMARY][Rack 1 OTB Primary Port 37/38]
+ mtu 9202
+ no ip address
+ carrier-delay up msec 200
+ carrier-delay down msec 200
+ shutdown
+ negotiation auto
+ channel-group 20 mode active
+!
+interface GigabitEthernet0/0/19
+ description [DOWNLINK][BYK-PE-01][Po10][[PRIMARY][Rack 1 OTB Primary Port 37/38]
+ mtu 9202
+ no ip address
+ carrier-delay up msec 200
+ carrier-delay down msec 200
+ negotiation auto
+ channel-group 20 mode active
+!
+interface GigabitEthernet0/0/20
+ description TRUNK_TO_SMG-SW-01_Gi0/1
+ no ip address
+ negotiation auto
+ service instance 14 ethernet
+  description KRG-RTU
+  encapsulation dot1q 14
+  rewrite ingress tag pop 1 symmetric
+  bridge-domain 14
+ !
+ service instance 15 ethernet
+  description NMS Monitoring
+  encapsulation dot1q 15
+  rewrite ingress tag pop 1 symmetric
+  bridge-domain 15
+ !
+ service instance 22 ethernet
+  description MANAGEMENT SWITCH
+  encapsulation dot1q 22
+  rewrite ingress tag pop 1 symmetric
+  bridge-domain 22
+ !
+ service instance 30 ethernet
+  description Managemen Tangram
+  encapsulation dot1q 30
+  rewrite ingress tag pop 1 symmetric
+  xconnect 10.255.10.8 1030 encapsulation mpls
+ !
+ service instance 800 ethernet
+  description ACCESS INTERNET CCTV HUB
+  encapsulation dot1q 800
+  rewrite ingress tag pop 1 symmetric
+  bridge-domain 800
+ !
+!
+interface GigabitEthernet0/0/21
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet0/0/22
+ description [DOWNLINK][NGN-PE-01][Po10]
+ mtu 9202
+ no ip address
+ carrier-delay up msec 200
+ carrier-delay down msec 200
+ shutdown
+ negotiation auto
+ channel-group 10 mode active
+!
+interface GigabitEthernet0/0/23
+ description [DOWNLINK][NGN-PE-01][Po10]
+ mtu 9202
+ no ip address
+ carrier-delay up msec 200
+ carrier-delay down msec 200
+ shutdown
+ negotiation auto
+ channel-group 10 mode active
+!
+interface TenGigabitEthernet0/0/24
+ description [UPLINK][SMG-P-01][Te0/1/0/10][DIRECT]
+ dampening
+ mtu 9202
+ ip address 192.168.225.14 255.255.255.252
+ no ip redirects
+ no ip unreachables
+ no ip proxy-arp
+ ip pim sparse-mode
+ ip ospf authentication message-digest
+ ip ospf message-digest-key 1 md5 7 060B1F2247584A161607144A
+ ip ospf network point-to-point
+ ip ospf bfd
+ load-interval 30
+ carrier-delay msec 200
+ mpls ip
+ mpls traffic-eng tunnels
+ bfd interval 200 min_rx 200 multiplier 3
+ service-policy output PM_SHAPER_CORE_EGRESS_10G
+ ip rsvp bandwidth
+!
+interface TenGigabitEthernet0/0/25
+ description [DOWNLINK][SMG-OLT-02][DIRECT]
+ no ip address
+ load-interval 30
+ service instance 32 ethernet
+  description MANAGEMENT ONT
+  encapsulation dot1q 32
+  rewrite ingress tag pop 1 symmetric
+  service-policy input PM_P1-DATA_INGRESS
+  bridge-domain 32
+ !
+ service instance 100 ethernet
+  description to MGMT-OLT
+  encapsulation dot1q 100
+  rewrite ingress tag pop 1 symmetric
+  bridge-domain 100
+ !
+ service instance 1000 ethernet
+  description PPPOE FTTH-BRAS-SMG
+  encapsulation dot1q 1000
+  rewrite ingress tag pop 1 symmetric
+  xconnect 10.255.24.1 1027 encapsulation mpls
+ !
+ service instance 2000 ethernet
+  description VIDEO Multicast
+  encapsulation dot1q 2000
+  rewrite ingress tag pop 1 symmetric
+  service-policy input PM_P1-DATA_INGRESS
+  bridge-domain 2000
+ !
+ service instance 2001 ethernet
+  description DHCP FTTH
+  encapsulation dot1q 2001
+  rewrite ingress tag pop 1 symmetric
+  bridge-domain 2001
+ !
+!
+interface TenGigabitEthernet0/0/26
+ description [DOWNLINK][SMG-OLT-01][DIRECT]
+ no ip address
+ load-interval 30
+ service instance 32 ethernet
+  description MANAGEMENT ONT
+  encapsulation dot1q 32
+  rewrite ingress tag pop 1 symmetric
+  service-policy input PM_P1-DATA_INGRESS
+  bridge-domain 32
+ !
+ service instance 100 ethernet
+  description to MGMT-OLT
+  encapsulation dot1q 100
+  rewrite ingress tag pop 1 symmetric
+  bridge-domain 100
+ !
+ service instance 1000 ethernet
+  description PPPOE FTTH-SMG-BRAS
+  encapsulation dot1q 1000
+  rewrite ingress tag pop 1 symmetric
+  xconnect 10.255.24.1 1026 encapsulation mpls
+ !
+ service instance 2000 ethernet
+  description VIDEO Multicast
+  encapsulation dot1q 2000
+  rewrite ingress tag pop 1 symmetric
+  service-policy input PM_P1-DATA_INGRESS
+  bridge-domain 2000
+ !
+ service instance 2001 ethernet
+  description DHCP FTTH
+  encapsulation dot1q 2001
+  rewrite ingress tag pop 1 symmetric
+  bridge-domain 2001
+ !
+!
+interface TenGigabitEthernet0/0/27
+ description [UPLINK][SMG-P-01][Te0/6/0/9][DIRECT]
+ dampening
+ mtu 9202
+ ip address 192.168.24.18 255.255.255.252
+ ip pim sparse-mode
+ ip ospf authentication message-digest
+ ip ospf message-digest-key 1 md5 7 13080711001A472538342E72
+ ip ospf network point-to-point
+ ip ospf bfd
+ load-interval 30
+ carrier-delay up msec 200
+ carrier-delay down msec 200
+ mpls ip
+ mpls traffic-eng tunnels
+ bfd interval 300 min_rx 300 multiplier 3
+ service-policy output PM_SHAPER_CORE_EGRESS_10G
+ ip rsvp bandwidth
+!
+interface GigabitEthernet0
+ vrf forwarding Mgmt-intf
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface BDI11
+ description Management ME1200
+ ip vrf forwarding smg-nms-me1200-fo
+ ip address 172.31.51.17 255.255.255.248 secondary
+ ip address 172.31.50.65 255.255.255.248
+ ip helper-address 172.31.32.4
+!
+interface BDI13
+ description MGMT-BRAS
+ ip vrf forwarding smg-nms-ftth01-fo
+ ip address 192.168.81.201 255.255.255.248
+!
+interface BDI14
+ description SMG-RTU
+ ip vrf forwarding smr-nms-fiber01-fo
+ ip address 192.168.255.1 255.255.255.224
+!
+interface BDI15
+ description NMS Monitoring
+ ip vrf forwarding smg-nms-ups01-fo
+ ip address 192.168.255.1 255.255.255.224
+!
+interface BDI22
+ description MANAGEMENT SWITCH
+ ip vrf forwarding smg-nms-metro01-fo
+ ip address 192.168.250.145 255.255.255.248
+!
+interface BDI32
+ description MANAGEMENT ONT
+ ip vrf forwarding smg-nms-rg01-fo
+ ip address 10.178.152.1 255.255.248.0
+ ip helper-address 10.177.10.4
+!
+interface BDI100
+ description MANAGEMENT OLT
+ ip vrf forwarding smg-nms-ftth01-fo
+ ip address 192.168.81.1 255.255.255.248
+!
+interface BDI344
+ description [DOWNLINK][MJPT-PE-01][VIA_FIBESTAR_(CID:CRT2006009471)]
+ dampening
+ ip address 192.168.227.85 255.255.255.252
+ no ip redirects
+ no ip unreachables
+ no ip proxy-arp
+ ip mtu 8000
+ ip pim sparse-mode
+ ip ospf authentication message-digest
+ ip ospf message-digest-key 1 md5 7 13080711001A472538342E72
+ ip ospf network point-to-point
+ ip ospf bfd
+ load-interval 30
+ carrier-delay msec 200
+ mpls ip
+ mpls traffic-eng tunnels
+ bfd interval 200 min_rx 200 multiplier 3
+ ip rsvp bandwidth
+!
+interface BDI345
+ description [DOWNLINK][SRT-PE-01][VIA_FIBESTAR_(CID:CRT2006009478)]
+ dampening
+ ip address 192.168.227.89 255.255.255.252
+ no ip redirects
+ no ip unreachables
+ no ip proxy-arp
+ ip mtu 8000
+ ip pim sparse-mode
+ ip ospf authentication message-digest
+ ip ospf message-digest-key 1 md5 7 13080711001A472538342E72
+ ip ospf network point-to-point
+ ip ospf bfd
+ load-interval 30
+ carrier-delay msec 200
+ mpls ip
+ mpls traffic-eng tunnels
+ bfd interval 200 min_rx 200 multiplier 3
+ ip rsvp bandwidth
+!
+interface BDI800
+ description ACCESS INTERNET CCTV HUB
+ ip vrf forwarding smg-corp-linknet01-fo
+ ip address 139.255.224.169 255.255.255.252
+!
+interface BDI801
+ description C00444-001_Cipta_Pilar_Persada
+ ip vrf forwarding smg-corp-linknet01-fo
+ ip address 139.255.53.241 255.255.255.248
+ ip access-group dns-blocking-in in
+!
+interface BDI802
+ description G00006_001_Gereja_Mawar_Sharon_Semarang
+ ip vrf forwarding smg-corp-linknet01-fo
+ ip address 139.255.56.233 255.255.255.248
+ no ip redirects
+ no ip unreachables
+ no ip proxy-arp
+ ip access-group dns-blocking-in in
+!
+interface BDI803
+ description N00110-008_Nindya_Karya_(BOD_4-5 Mar 2022)
+ ip vrf forwarding smg-corp-linknet01-fo
+ no ip address
+ no ip redirects
+ no ip unreachables
+ no ip proxy-arp
+ ip access-group dns-blocking-in in
+ shutdown
+!
+interface BDI2000
+ description VIDEO Multicast
+ ip vrf forwarding smg-ftth-iptv-fo
+ ip address 192.168.224.81 255.255.255.240
+ ip pim bsr-border
+ ip pim sparse-mode
+ ip access-group MCAST_CONTROL in
+ load-interval 30
+!
+interface BDI2001
+ description DHCP FTTH
+ ip vrf forwarding smg-ftth-vod01-fo
+ ip address 172.18.64.1 255.255.248.0 secondary
+ ip address 172.17.8.1 255.255.248.0
+ ip helper-address 172.16.0.20
+ ip pim bsr-border
+ ip pim sparse-mode
+ ip access-group MCAST_CONTROL in
+ load-interval 30
+!
+interface BDI2002
+ description IPTV DVBT TANGRAM 
+ ip vrf forwarding smg-corp-iptv-fo
+ ip address 192.168.111.121 255.255.255.252 secondary
+ ip address 192.168.111.81 255.255.255.252
+ ip pim bsr-border
+ ip pim sparse-mode
+ ip access-group MCAST_CONTROL in
+ load-interval 30
+!
+router ospf 1
+ router-id 10.255.101.184
+ max-metric router-lsa on-startup 100
+ auto-cost reference-bandwidth 100000
+ nsf cisco
+ timers throttle spf 1 50 1000
+ timers throttle lsa 0 20 1000
+ network 10.255.101.184 0.0.0.0 area 0
+ network 10.255.101.228 0.0.0.3 area 0
+ network 192.168.24.16 0.0.0.3 area 0
+ network 192.168.24.60 0.0.0.3 area 0
+ network 192.168.222.168 0.0.0.3 area 0
+ network 192.168.222.172 0.0.0.3 area 0
+ network 192.168.223.36 0.0.0.3 area 0
+ network 192.168.223.40 0.0.0.3 area 0
+ network 192.168.223.48 0.0.0.3 area 0
+ network 192.168.225.12 0.0.0.3 area 0
+ network 192.168.225.88 0.0.0.3 area 0
+ network 192.168.226.248 0.0.0.3 area 0
+ network 192.168.227.24 0.0.0.3 area 0
+ network 192.168.227.84 0.0.0.3 area 0
+ network 192.168.227.88 0.0.0.3 area 0
+ mpls ldp sync
+ mpls traffic-eng router-id Loopback0
+ mpls traffic-eng area 0
+!
+router bgp 23700
+ bgp router-id 10.255.101.184
+ bgp consistency-checker auto-repair
+ bgp log-neighbor-changes
+ bgp graceful-restart
+ no bgp default ipv4-unicast
+ neighbor RR-Routers peer-group
+ neighbor RR-Routers remote-as 23700
+ neighbor RR-Routers password 7 03094B080D19624E491958
+ neighbor RR-Routers update-source Loopback0
+ neighbor 10.255.10.4 remote-as 23700
+ neighbor 10.255.10.4 peer-group RR-Routers
+ neighbor 10.255.12.32 remote-as 23700
+ neighbor 10.255.12.32 peer-group RR-Routers
+ !
+ address-family ipv4
+  redistribute connected
+ exit-address-family
+ !
+ address-family vpnv4
+  neighbor RR-Routers send-community extended
+  neighbor 10.255.10.4 activate
+  neighbor 10.255.12.32 activate
+ exit-address-family
+ !
+ address-family ipv4 mdt
+  neighbor 10.255.10.4 activate
+  neighbor 10.255.12.32 activate
+ exit-address-family
+ !
+ address-family ipv4 vrf smg-corp-linknet01-fo
+  import path selection all
+  import path limit 3
+  redistribute connected
+  redistribute static
+  maximum-paths ibgp 2
+ exit-address-family
+ !
+ address-family ipv4 vrf smg-ftth-iptv-fo
+  import path selection all
+  import path limit 3
+  redistribute connected
+  redistribute static
+ exit-address-family
+ !
+ address-family ipv4 vrf smg-ftth-vod01-fo
+  import path selection all
+  import path limit 3
+  redistribute connected
+  redistribute static
+ exit-address-family
+ !
+ address-family ipv4 vrf smg-nms-ftth01-fo
+  redistribute connected
+  redistribute static
+ exit-address-family
+ !
+ address-family ipv4 vrf smg-nms-me1200-fo
+  redistribute connected
+  redistribute static
+ exit-address-family
+ !
+ address-family ipv4 vrf smg-nms-metro01-fo
+  redistribute connected
+  redistribute static
+ exit-address-family
+ !
+ address-family ipv4 vrf smg-nms-rg01-fo
+  redistribute connected
+  redistribute static
+ exit-address-family
+ !
+ address-family ipv4 vrf smg-nms-ups01-fo
+  redistribute connected
+ exit-address-family
+ !
+ address-family ipv4 vrf smr-nms-fiber01-fo
+  redistribute connected
+ exit-address-family
+!
+ip forward-protocol nd
+no ip forward-protocol udp netbios-ns
+no ip forward-protocol udp netbios-dgm
+!
+no ip http server
+no ip http secure-server
+ip tftp source-interface Loopback0
+ip pim ssm range 50
+ip tacacs source-interface Loopback0 
+ip route vrf smg-ftth-iptv-fo 0.0.0.0 0.0.0.0 192.168.2.2
+!
+ip access-list extended dns-blocking-in
+ permit udp any host 202.137.3.111 eq domain
+ permit udp any host 202.137.3.110 eq domain
+ permit udp any host 139.0.0.138 eq domain
+ deny   udp any any eq domain
+ permit ip any any
+!
+!
+ip prefix-list LOOPBACK seq 5 permit 0.0.0.0/0 ge 32
+logging history size 200
+logging alarm informational
+logging source-interface Loopback0
+logging host 10.255.4.13
+logging host 10.255.4.20
+logging host 192.168.190.70
+access-list 1 permit 10.255.4.254
+access-list 1 permit 192.168.255.170
+access-list 1 permit 10.255.4.5
+access-list 1 permit 10.255.4.7
+access-list 1 permit 10.255.4.6
+access-list 1 permit 10.255.4.8
+access-list 1 permit 10.255.4.13
+access-list 1 permit 10.255.4.14
+access-list 1 permit 192.168.190.0 0.0.1.255
+access-list 1 permit 192.168.192.0 0.0.1.255
+access-list 1 permit 10.255.10.0 0.0.0.255
+access-list 1 permit 10.255.16.0 0.0.0.255
+access-list 1 permit 10.255.12.0 0.0.0.255
+access-list 1 permit 10.10.1.0 0.0.0.255
+access-list 1 permit 192.168.200.0 0.0.7.255
+access-list 1 permit 192.168.224.0 0.0.7.255
+access-list 1 permit 10.255.100.0 0.0.0.255
+access-list 40 permit 10.255.17.129
+access-list 40 permit 10.255.10.15
+access-list 50 permit 239.232.0.0 0.0.255.255
+access-list 90 permit 192.168.190.242
+access-list 90 permit 192.168.255.186
+access-list 90 permit 192.168.190.178
+access-list 90 permit 192.168.190.70
+access-list 90 permit 10.255.4.6
+access-list 90 permit 10.255.4.13
+!
+snmp-server view cutdown iso included
+snmp-server view cutdown at excluded
+snmp-server view cutdown ip.21 excluded
+snmp-server view cutdown ipNetToMediaEntry.1 excluded
+snmp-server view cutdown ipNetToMediaEntry.3 excluded
+snmp-server view cutdown ipNetToMediaEntry.4 excluded
+snmp-server community 63mb31ju64103 view cutdown RW 90
+snmp-server community kvcn view cutdown RO 90
+snmp-server trap-source Loopback0
+snmp-server packetsize 2048
+snmp-server location HUB Semarang
+snmp-server enable traps snmp authentication linkdown linkup coldstart warmstart
+snmp-server enable traps tty
+snmp-server enable traps ospf state-change
+snmp-server enable traps ospf errors
+snmp-server enable traps ospf retransmit
+snmp-server enable traps ospf lsa
+snmp-server enable traps ospf cisco-specific state-change nssa-trans-change
+snmp-server enable traps ospf cisco-specific errors
+snmp-server enable traps ospf cisco-specific retransmit
+snmp-server enable traps ospf cisco-specific lsa
+snmp-server enable traps bgp
+snmp-server enable traps config
+snmp-server enable traps cpu threshold
+snmp-server enable traps mpls ldp
+snmp-server enable traps mpls vpn
+snmp ifmib ifindex persist
+mpls ldp router-id Loopback0 force
+!
+tacacs-server host 192.168.190.110
+tacacs-server directed-request
+tacacs-server key 7 011F570A5005551B2A4957
+!
+!
+!
+control-plane
+!
+banner motd ^CCC
+
+                ACCESS IS RESTRICTED TO AUTHORISED PERSONNEL ONLY
+
+                This system is equipped with a security system
+                intended to prevent and record unauthorised
+                access attempts. Unauthorised access or use
+                shall render the user liable to criminal and or
+                civil prosecution.
+^C
+!
+line con 0
+ exec-timeout 0 0
+ logging synchronous
+ stopbits 1
+line aux 0
+ stopbits 1
+line vty 0 4
+ access-class 1 in
+ exec-timeout 15 0
+ password mpckv
+ logging synchronous
+ transport input telnet ssh
+line vty 5 15
+ access-class 1 in
+ exec-timeout 15 0
+ password mpckv
+ logging synchronous
+ transport input telnet ssh
+!
+ntp authentication-key 1 md5 151F1B0F0F3C682A3C2374 7
+ntp authenticate
+ntp trusted-key 1
+ntp source Loopback0
+ntp access-group peer 40
+ntp server 10.255.17.129 key 1 source Loopback0
+ntp server 10.255.10.15 key 1 source Loopback0
+!
+
+!
+end
+

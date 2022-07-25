@@ -1,0 +1,32 @@
+interface Port-channel6
+ description G00325-004_Google Cloud Platform [ZONE 2]
+ mtu 9200
+ no ip address
+ service instance 1100 ethernet
+  description P00976-003_PT. BANK JAGO, TBK (GCP Zone 2 DCI)
+  encapsulation dot1q 1100
+  rewrite ingress tag pop 1 symmetric
+  service-policy input PM_P1-DATA_INGRESS
+  service-policy output LKL-300Mbps
+  xconnect 10.255.19.25 101100 encapsulation mpls
+   mtu 1500
+ !
+ service instance 1101 ethernet
+  description B00436-011_BFI_Finance_Indonesia_Tbk_(To_GCP_Zone_2_DCI)
+  encapsulation dot1q 1101
+  rewrite ingress tag pop 1 symmetric
+  service-policy input PM_P1-DATA_INGRESS
+  service-policy output LKL-100MBPS
+  xconnect 10.255.13.104 101101 encapsulation mpls
+   mtu 1500
+ !
+ service instance 1102 ethernet
+  description B00149-058_Bank_Rakyat_Indonesia_(Persero)[To_GCP_Zone_2_DCI]
+  encapsulation dot1q 1102
+  rewrite ingress tag pop 1 symmetric
+  service-policy input PM_P1-DATA_INGRESS
+  service-policy output LKL-50MBPS
+  xconnect 10.255.10.229 101102 encapsulation mpls
+   mtu 1500
+ !
+!

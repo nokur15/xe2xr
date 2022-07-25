@@ -1,0 +1,47 @@
+interface Vlan3442
+ description cluster_vlan3442
+ ip vrf forwarding abc
+ ip address 10.247.137.92 255.255.255.240
+ no ip redirects
+ no ip proxy-arp
+ standby version 2
+ standby 3442 ip 10.247.137.94
+ standby 3442 priority 110
+ standby 3442 preempt
+ arp timeout 7200
+!
+interface Vlan2400
+ description cluster_vlan2400
+ ip vrf forwarding def
+ ip address 10.249.179.158 255.255.255.224
+ no ip redirects
+ no ip proxy-arp
+ shutdown
+!
+interface GigabitEthernet2/2
+ description trunk_interface
+ switchport
+ switchport trunk encapsulation dot1q
+ switchport trunk allowed vlan 3142,3394,3682
+ switchport mode trunk
+ shutdown
+ mls qos vlan-based
+ storm-control broadcast level 0.10
+ storm-control multicast level 0.10
+!
+interface Port-Channel10
+ description to_other_city
+ switchport
+ switchport trunk encapsulation dot1q
+ switchport trunk allowed vlan 3142,3394,3682
+ switchport trunk native vlan 99
+ switchport mode trunk
+ shutdown
+ mls qos vlan-based
+ storm-control broadcast level 0.10
+ storm-control multicast level 0.10
+!
+ip route 10.247.48.8 255.255.255.248 10.247.141.49 tag 113101 name this_is_static_routing
+ip route vrf abc 10.247.48.16 255.255.255.248 10.247.141.50
+ip route 10.247.48.24 255.255.255.248 10.247.141.51 name this_is_static_routing
+ip route vrf def 10.247.48.32 255.255.255.248 10.247.141.52 tag 113101 name this_is_static_routing

@@ -1,0 +1,19 @@
+interface TenGigabitEthernet1/3
+ description [UPLINK][GSA-P-01][Te0/1/0/5]
+ dampening
+ mtu 9202
+ ip address 192.168.31.14 255.255.255.252
+ ip pim sparse-mode
+ ip ospf authentication message-digest
+ ip ospf message-digest-key 1 md5 7 000903050F4D48091C314A0F
+ ip ospf network point-to-point
+ ip ospf bfd
+ load-interval 30
+ carrier-delay up msec 200
+ carrier-delay down msec 200
+ mpls ip
+ mpls traffic-eng tunnels
+ bfd interval 200 min_rx 200 multiplier 3
+ service-policy output PM_SHAPER_CORE_EGRESS_10G
+ ip rsvp bandwidth
+!

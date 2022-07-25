@@ -1,0 +1,89 @@
+router ospf 1
+ router-id 10.255.11.20
+ ispf
+ auto-cost reference-bandwidth 100000
+ nsf cisco
+ timers throttle spf 1 50 1000
+ timers throttle lsa 0 20 1000
+ network 10.255.11.20 0.0.0.0 area 0
+ network 192.168.31.12 0.0.0.3 area 0
+ network 192.168.31.16 0.0.0.3 area 0
+ network 192.168.31.20 0.0.0.3 area 0
+ network 192.168.61.12 0.0.0.3 area 0
+ network 192.168.61.16 0.0.0.3 area 0
+ network 192.168.61.20 0.0.0.3 area 0
+ network 192.168.200.72 0.0.0.3 area 0
+ network 192.168.206.92 0.0.0.3 area 0
+ network 192.168.210.4 0.0.0.3 area 0
+ network 192.168.210.12 0.0.0.3 area 0
+ network 192.168.210.28 0.0.0.3 area 0
+ network 192.168.210.40 0.0.0.3 area 0
+ network 192.168.210.44 0.0.0.3 area 0
+ network 192.168.210.136 0.0.0.3 area 0
+ network 192.168.210.140 0.0.0.3 area 0
+ network 192.168.210.144 0.0.0.3 area 0
+ network 192.168.210.148 0.0.0.3 area 0
+ network 192.168.210.180 0.0.0.3 area 0
+ network 192.168.210.200 0.0.0.3 area 0
+ network 192.168.210.204 0.0.0.3 area 0
+ network 192.168.210.208 0.0.0.3 area 0
+ network 192.168.210.212 0.0.0.3 area 0
+ network 192.168.210.216 0.0.0.3 area 0
+ network 192.168.210.220 0.0.0.3 area 0
+ network 192.168.210.244 0.0.0.3 area 0
+ network 192.168.211.4 0.0.0.3 area 0
+ network 192.168.211.56 0.0.0.3 area 0
+ network 192.168.211.60 0.0.0.3 area 0
+ network 192.168.211.64 0.0.0.3 area 0
+ network 192.168.211.68 0.0.0.3 area 0
+ network 192.168.211.72 0.0.0.3 area 0
+ network 192.168.211.76 0.0.0.3 area 0
+ network 192.168.211.84 0.0.0.3 area 0
+ network 192.168.211.96 0.0.0.3 area 0
+ network 192.168.211.140 0.0.0.3 area 0
+ network 192.168.211.144 0.0.0.3 area 0
+ network 192.168.211.148 0.0.0.3 area 0
+ network 192.168.211.152 0.0.0.3 area 0
+ network 192.168.211.156 0.0.0.3 area 0
+ network 192.168.211.160 0.0.0.3 area 0
+ network 192.168.211.164 0.0.0.3 area 0
+ network 192.168.211.192 0.0.0.3 area 0
+ network 192.168.211.208 0.0.0.3 area 0
+ network 192.168.211.216 0.0.0.3 area 0
+ network 192.168.211.220 0.0.0.3 area 0
+ network 192.168.213.104 0.0.0.3 area 0
+ network 192.168.215.36 0.0.0.3 area 0
+ network 192.168.215.40 0.0.0.3 area 0
+ network 192.168.215.52 0.0.0.3 area 0
+ network 192.168.217.92 0.0.0.3 area 0
+ network 192.168.221.36 0.0.0.3 area 0
+ network 192.168.221.40 0.0.0.3 area 0
+ network 192.168.221.80 0.0.0.3 area 0
+ network 192.168.221.84 0.0.0.3 area 0
+ network 192.168.221.88 0.0.0.3 area 0
+ network 192.168.221.92 0.0.0.3 area 0
+ network 192.168.222.24 0.0.0.3 area 2
+ network 192.168.222.144 0.0.0.3 area 0
+ network 192.168.223.72 0.0.0.3 area 0
+ network 192.168.223.100 0.0.0.3 area 0
+ network 192.168.225.56 0.0.0.3 area 0
+ network 192.168.226.144 0.0.0.3 area 0
+ network 192.168.226.148 0.0.0.3 area 0
+ network 192.168.226.152 0.0.0.3 area 0
+ network 192.168.226.156 0.0.0.3 area 0
+ network 192.168.228.44 0.0.0.3 area 0
+ network 192.168.228.48 0.0.0.3 area 0
+ network 192.168.228.52 0.0.0.3 area 0
+ network 192.168.228.56 0.0.0.3 area 0
+ network 192.168.228.72 0.0.0.3 area 0
+ network 192.168.228.220 0.0.0.3 area 0
+ network 192.168.231.152 0.0.0.3 area 0
+ network 192.168.232.40 0.0.0.3 area 0
+ network 192.168.252.48 0.0.0.3 area 0
+ network 192.168.252.52 0.0.0.3 area 0
+ network 192.168.252.104 0.0.0.3 area 0
+ maximum-paths 32
+ mpls ldp sync
+ mpls traffic-eng router-id Loopback0
+ mpls traffic-eng area 0
+!

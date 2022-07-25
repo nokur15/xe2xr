@@ -1,0 +1,114 @@
+
+!--------------------------- layer 2 interfaces ----------------------------------
+interface GigabitEthernet2/2
+ description trunk_interface
+ load-interval 30
+!
+interface GigabitEthernet2/2.3142 l2transport
+ description trunk_interface
+ encapsulation dot1q 3142 exact
+ rewrite ingress tag pop 1 symmetric
+!
+interface GigabitEthernet2/2.3394 l2transport
+ description trunk_interface
+ encapsulation dot1q 3394 exact
+ rewrite ingress tag pop 1 symmetric
+!
+interface GigabitEthernet2/2.3682 l2transport
+ description trunk_interface
+ encapsulation dot1q 3682 exact
+ rewrite ingress tag pop 1 symmetric
+!
+interface Port-Channel10
+ description to_other_city
+ load-interval 30
+!
+interface Port-Channel10.3142 l2transport
+ description to_other_city
+ encapsulation dot1q 3142 exact
+ rewrite ingress tag pop 99 symmetric
+!
+interface Port-Channel10.3394 l2transport
+ description to_other_city
+ encapsulation dot1q 3394 exact
+ rewrite ingress tag pop 99 symmetric
+!
+interface Port-Channel10.3682 l2transport
+ description to_other_city
+ encapsulation dot1q 3682 exact
+ rewrite ingress tag pop 99 symmetric
+!
+l2vpn
+ bridge group BVI
+  bridge-domain 3682
+   storm-control multicast kbps 400
+   storm-control broadcast kbps 400
+   interface GigabitEthernet2/2.3682
+   !
+   interface Port-Channel10.3682
+   !
+   routed interface BVI3682
+!
+l2vpn
+ bridge group BVI
+  bridge-domain 3394
+   storm-control multicast kbps 400
+   storm-control broadcast kbps 400
+   interface GigabitEthernet2/2.3394
+   !
+   interface Port-Channel10.3394
+   !
+   routed interface BVI3394
+!
+l2vpn
+ bridge group BVI
+  bridge-domain 3142
+   storm-control multicast kbps 400
+   storm-control broadcast kbps 400
+   interface GigabitEthernet2/2.3142
+   !
+   interface Port-Channel10.3142
+   !
+   routed interface BVI3142
+!
+!----------------------------- vrf abc -------------------------------
+!*** l3 interface ***
+interface BVI3442
+ description cluster_vlan3442
+ vrf abc
+ ipv4 address 10.247.137.92 255.255.255.240
+ load-interval 30
+ arp timeout 7200
+!
+router hsrp
+ interface BVI3442
+  address-family ipv4
+  hsrp version 2
+  hsrp 3442
+  preempt
+  priority 110
+  address 10.247.137.94
+!
+!----------------------------- vrf def -------------------------------
+!*** l3 interface ***
+interface BVI2400
+ description cluster_vlan2400
+ vrf def
+ ipv4 address 10.249.179.158 255.255.255.224
+ load-interval 30
+ shutdown
+!
+!----------------------------- vrf abc -------------------------------
+*** static route ***
+router static 
+ vrf abc
+ address-family ipv4 unicast
+  10.247.48.16 255.255.255.248  10.247.141.50   
+!
+!----------------------------- vrf def -------------------------------
+*** static route ***
+router static 
+ vrf def
+ address-family ipv4 unicast
+  10.247.48.32 255.255.255.248  10.247.141.52  tag 113101 description this_is_static_routing
+!

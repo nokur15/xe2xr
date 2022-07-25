@@ -101,7 +101,7 @@ router hsrp
   preempt
   {%- endif %}
   {%- if l3_interface['hsrp_priority'] %}
-  priotiy {{l3_interface['hsrp_priority']}}
+  priority {{l3_interface['hsrp_priority']}}
   {%- endif %}
   address {{l3_interface['hsrp_ip']}}
 !
@@ -118,6 +118,28 @@ router static
   {{network['dst_network']}} {{network['netmask']}} {% if network['interface'] %}{{network['interface']}}{% endif %} {{network['gateway']}} {% if network['bfd_interval'] %}bfd fast-detect minimum-interval {{network['bfd_interval']}} multiplier {{network['bfd_multiplier']}}{% endif %} {% if network['tag'] != None %}tag {{network['tag']}}{% endif %} {% if network['description'] != None %}description {{network['description']}}{% endif %}
   {%- endfor %}
 !
+'''
+
+        self.vrf_route_target = '''
+{%- if vrf != None %} 
+vrf {{vrf}}
+ address-family ipv4 unicast
+ {%- if ip_vrf['map'] != None %}
+ import map {{ip_vrf['map']}}
+ {%- endif %}
+  import route-target
+  {%- for import in ip_vrf['import-targets'] %}
+   {{import}}
+  {%- endfor %}
+  !
+  export route-target
+  {%- for export in ip_vrf['export-targets'] %}
+   {{export}}
+  {%- endfor %}
+  !
+ !
+!
+{%- endif %}
 '''
     
     def xr_static_route(self, vrf=None, networks=[], l3_interfaces=[], bfd=[]):
@@ -167,6 +189,11 @@ router static
         l3_interface = Template(self.l3_interface_template)
         result = l3_interface.render(vrf=vrf, l3_interfaces=l3_interfaces)
         return result
+
+    def xr_vrf_target(self, vrf=None, vrf_target_int=[]):
+        vrf_target = Template(self.vrf_route_target)
+        result = vrf_target.render(vrf=vrf, ip_vrf=vrf_target_int)
+        return result
     
 class xe2xr():
     def __init__(self, file):
@@ -215,7 +242,7 @@ class xe2xr():
                 'native' : 1
             }
             int_name = re.search('interface (\S+)', interface_cmd.text)
-            interface['interface'] = int_name.group(1).replace('Port-Channel', 'Bundle-Ether')
+            interface['interface'] = int_name.group(1).replace('Port-channel', 'Bundle-Ether')
             for cmd in interface_cmd.children:
                 if 'description' in cmd.text:
                     int_desc = re.search('description (.+)', cmd.text)
@@ -353,6 +380,91 @@ class xe2xr():
         
         return static_routes
 
+    def find_vrf_target(self, vrf='default'):
+        ip_vrfs_cmd = self.ciscoparse.find_objects_w_child(parentspec=r'ip vrf', childspec=r'route-target')
+        ip_vrfs = list()
+        for each_ip_vrf in ip_vrfs_cmd:
+            ip_vrf = {
+                'vrf' : None,
+                'rd' : None,
+                'import-targets' : None,
+                'export-targets' : None,
+                'map' : None
+            }
+            import_list = list()
+            export_list = list()
+            ip_vrf_name = re.search('ip vrf (\S+)', each_ip_vrf.text)
+            ip_vrf['vrf'] = ip_vrf_name.group(1)
+            for cmd in each_ip_vrf.children:
+                if 'route-target import' in cmd.text:
+                    ip_vrf_import = re.search('route-target import (.+)', cmd.text)
+                    import_list.append(ip_vrf_import.group(1))
+                elif 'route-target export' in cmd.text:
+                    ip_vrf_export = re.search('route-target export (.+)', cmd.text)
+                    export_list.append(ip_vrf_export.group(1))
+                elif 'import map' in cmd.text:
+                    ip_vrf_map = re.search('import map (\S+)', cmd.text)
+                    ip_vrf['map'] = ip_vrf_map.group(1)
+                elif 'rd' in cmd.text:
+                    ip_vrf_rd = re.search('rd (.+)', cmd.text)
+                    ip_vrf['rd'] = ip_vrf_rd.group(1)
+            ip_vrf['import-targets'] = import_list
+            ip_vrf['export-targets'] = export_list
+            ip_vrfs.append(ip_vrf)
+        return ip_vrfs
+    
+    def find_bgp(self):
+        bgps_cmd = self.ciscoparse.find_objects(r'router bgp')
+        bgps = list()
+        for each_bgp in bgps_cmd:
+            bgp = {
+                'number' : None,
+                'main_neighbor' : None,
+                'peer_neighbor' : None
+            }
+            neighbors = list()
+            neighbor_group = {
+                'peer-group' : False,
+                'name' : None,
+                'remote-as' : None,
+                'update-source' : None,
+                'password-type' : None,
+                'password' : None,
+            }
+            bgp_number = re.search('router bgp (\d+)', each_bgp.text)
+            bgp['number'] = bgp_number.group(1)
+            for cmd1 in each_bgp.children:
+                """ if 'neighbor' in cmd1.text:
+                    if 'peer-group' in cmd1.text and neighbor_group['remote-as'] == None:
+                        neighbor_name = re.search('neighbor (.+) peer-group', cmd1.text)
+                        neighbor_group['name'] = neighbor_name.group(1)
+                        neighbor_group['peer-group'] = True
+                        bgp['main_neighbor'] = neighbor_name.group(1)
+                    elif 'remote-as' in cmd1.text:
+                        neighbor_info = re.search('neighbor (.+) remote-as (\d+)', cmd1.text)
+                        if neighbor_group['name'] == neighbor_info.group(1) and neighbor_group['peer-group'] == True:
+                            neighbor_group['remote-as'] = neighbor_info.group(2)
+                        else:
+                            neighbors.append(neighbor_group)
+                            neighbor_group['name'] = neighbor_info.group(1)
+                            neighbor_group['remote-as'] = neighbor_info.group(2)
+                            neighbor_group['peer-group'] = False """
+                if 'address-family ipv4 vrf' in cmd1.text:
+                    address_vrf = re.search('address-family ipv4 (.+)', cmd1.text)
+                    for cmd2 in cmd1.children:
+                        if 'import path selection all' in cmd2.text:
+                            import_selection = 1
+                        elif 'import path limit 3' in cmd2.text:
+                            import_limit = 1
+                        elif 'redistribute connected' in cmd2.text:
+                            redistribute_conn = 1
+                        elif 'redistribute static' in cmd2.text:
+                            redistribute_static = 1
+            print("let's see")
+        return bgps
+
+
+
 def main():
     config = xe2xr(file=argv[1])
     try:
@@ -361,17 +473,24 @@ def main():
         db = None
     print(len(argv)) 
     vrfes = config.find_vrf_interface()
-    #print(vrfes)
+    print(vrfes)
     l2_interfaces = config.find_l2_interface()
+    print(l2_interfaces)
     bfd_static = config.find_bfd_static_route()
+    print(bfd_static)
+    vrf_target = config.find_vrf_target()
+    print(vrf_target)
+    bgpes = config.find_bgp()
+    print(bgpes)
     xr_template = xe2xr_template()
-    #pprint(bfd_static)
+    #print(bfd_static)
 
-    with open('xr_config.txt','w') as log:
-        print('--------------------------- layer 2 interfaces ----------------------------------')
-        log.write('\n--------------------------- layer 2 interfaces ----------------------------------')
+    with open('xr_config_lab.txt','w') as log:
+        print('!--------------------------- layer 2 interfaces ----------------------------------')
+        log.write('\n!--------------------------- layer 2 interfaces ----------------------------------')
         
         vlan_interfaces = config.find_l3_interface()
+        print(vlan_interfaces)
         if db != None:
             l2_updates = list()
             for i in l2_interfaces:
@@ -392,18 +511,18 @@ def main():
             print(l2_interface_template)
             log.write(l2_interface_template)
 
-        if len(vrfes) > 0:
+        if len(vrfes) > 0: #Translate per VRF yang ada
             #l3 interfaces
             for vrf in vrfes:
                 try:
                     db = XLSXDictReader(argv[2])
                 except:
                     db = None
-                print('----------------------------- vrf %s -------------------------------' % vrf)
-                log.write('\n----------------------------- vrf %s -------------------------------' % vrf)
+                print('!----------------------------- vrf %s -------------------------------' % vrf)
+                log.write('\n!----------------------------- vrf %s -------------------------------' % vrf)
                 #print(db)
-                print('*** l3 interface ***')
-                log.write('\n*** l3 interface ***')
+                print('!*** l3 interface ***')
+                log.write('\n!*** l3 interface ***')
                 l3_interfaces = config.find_l3_interface(vrf)
                 #print(l3_interfaces)
 
@@ -434,8 +553,8 @@ def main():
 
             #static routing
             for vrf in vrfes:
-                print('----------------------------- vrf %s -------------------------------' % vrf)
-                log.write('\n----------------------------- vrf %s -------------------------------' % vrf)
+                print('!----------------------------- vrf %s -------------------------------' % vrf)
+                log.write('\n!----------------------------- vrf %s -------------------------------' % vrf)
                 try:
                     db = XLSXDictReader(argv[2])
                 except:
@@ -465,6 +584,11 @@ def main():
                     static_route_template = xr_template.xr_static_route(vrf=vrf, networks=static_routes, l3_interfaces=l3_interfaces, bfd=bfd_static)
                     print(static_route_template)
                     log.write(static_route_template)
+        elif len(vrf_target) > 0: #ini hard script banget
+            for i in vrf_target:
+                vrf_target_template = xr_template.xr_vrf_target(vrf=i['vrf'], vrf_target_int= i)
+                print(vrf_target_template)
+                log.write(vrf_target_template)
 
 if __name__ == "__main__":
     main()

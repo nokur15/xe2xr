@@ -1,0 +1,30 @@
+ip vrf rkt-corp-clearmpts01-fo
+ rd 10.255.11.20:829
+ mdt default 239.232.0.9
+ mdt data 239.232.9.0 0.0.0.255 threshold 1
+ mdt log-reuse
+ mdt data threshold 1
+ route-target export 23700:829
+ route-target import 23700:829
+!
+ip vrf rkt-cs-google1-up
+ rd 10.255.11.20:35000
+ route-target export 23700:35000
+ route-target import 23700:35000
+ route-target import 23700:11
+ route-target import 23700:21
+ route-target import 23700:22
+ route-target import 23700:12
+!
+ip vrf rkt-cs-akamai1-up
+ rd 10.255.11.20:35200
+ import map dns-akamai
+ route-target export 23700:35200
+ route-target import 23700:35200
+ route-target import 23700:11
+ route-target import 23700:21
+ route-target import 23700:22
+ route-target import 23700:12
+!
+
+

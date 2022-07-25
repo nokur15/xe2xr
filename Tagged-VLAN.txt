@@ -1,0 +1,54 @@
+interface GigabitEthernet0/0/5
+ description TRUNK_CSF-SW-04_Gi1/0/24
+ no ip address
+ negotiation auto
+ !
+ service instance 357 ethernet
+  description cg-idx-kseitcc1-fo
+  encapsulation dot1q 357
+  rewrite ingress tag pop 1 symmetric
+  service-policy input KSEI-IN
+  bridge-domain 357
+ !
+!
+interface BDI357
+ description To_KSEI_ODC01 [SCBD]
+ ip vrf forwarding cg-idx-kseitcc1-fo
+ ip address 172.16.2.1 255.255.255.252
+ no ip proxy-arp
+ ip ospf dead-interval 4
+ ip ospf hello-interval 2
+ !
+!
+router ospf 357 vrf cg-idx-kseitcc1-fo
+ router-id 172.16.2.1
+ timers throttle spf 10 20 60
+ redistribute bgp 23700 subnets
+ network 172.16.2.0 0.0.0.3 area 0
+ !
+!
+ip vrf cg-idx-kseitcc1-fo
+ rd 23700:4210
+ route-target export 23700:4210
+ route-target import 23700:5000
+ route-target import 23700:4410
+ route-target import 23700:4430
+ route-target import 23700:15031
+ !
+!
+router bgp 23700
+ bgp router-id 10.255.102.91
+ bgp consistency-checker auto-repair
+ bgp log-neighbor-changes
+ bgp graceful-restart restart-time 120
+ bgp graceful-restart stalepath-time 360
+ bgp graceful-restart
+ no bgp default ipv4-unicast
+ !
+ address-family ipv4 vrf cg-idx-kseitcc1-fo
+  redistribute connected
+  redistribute static
+  redistribute ospf 357 match internal external 1 external 2
+ exit-address-family
+ !
+!

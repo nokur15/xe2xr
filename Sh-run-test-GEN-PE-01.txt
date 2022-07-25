@@ -1,0 +1,664 @@
+﻿version 16.9
+service nagle
+no service pad
+service tcp-keepalives-in
+service tcp-keepalives-out
+service timestamps debug datetime msec localtime show-timezone
+service timestamps log datetime msec localtime show-timezone year
+service password-encryption
+service sequence-numbers
+service unsupported-transceiver
+platform loadbalance max-paths 8
+no platform punt-keepalive disable-kernel-core
+platform bfd-debug-trace 1
+platform xconnect load-balance-hash-algo mac-ip-instanceid
+platform qos-policer queue 3 20000000 16000000
+platform tcam-parity-error enable
+platform tcam-threshold alarm-frequency 1
+!
+hostname GEN-PE-01
+!
+boot-start-marker
+boot system flash bootflash:asr920-universalk9_npe.16.09.03.SPA.bin
+boot-end-marker
+!
+!
+vrf definition Mgmt-intf
+ !
+ address-family ipv4
+ exit-address-family
+ !
+ address-family ipv6
+ exit-address-family
+!
+logging buffered 512000
+no logging console
+enable secret 5 $1$XGF2$WgYPK.vHmEIfqvcmB4wjt0
+!
+aaa new-model
+!
+!
+aaa authentication login default group tacacs+ local
+aaa authentication login telnet group tacacs+ local
+aaa authentication login console group tacacs+ local
+aaa authentication enable default group tacacs+ enable
+aaa authorization exec default group tacacs+ local 
+aaa authorization commands 1 default group tacacs+ local 
+aaa authorization commands 15 default group tacacs+ local 
+aaa accounting update newinfo
+aaa accounting exec default start-stop group tacacs+
+aaa accounting commands 0 default start-stop group tacacs+
+aaa accounting commands 1 default start-stop group tacacs+
+aaa accounting commands 7 default start-stop group tacacs+
+aaa accounting commands 15 default start-stop group tacacs+
+aaa accounting network 15 start-stop group tacacs+
+aaa accounting connection 15 start-stop group tacacs+
+aaa accounting system default start-stop group tacacs+
+!
+!
+!
+!
+!
+aaa session-id common
+clock timezone WIB 7 0
+no ip source-route
+!
+ip vrf gen-corp-linknet01-fo
+ rd 10.255.102.95:20000
+ route-target export 23700:20000
+ route-target import 23700:20000
+ route-target import 23700:35000
+ route-target import 23700:35100
+ route-target import 23700:35200
+!
+!
+!
+!
+!
+!
+!
+ip name-server 10.255.4.9
+ip domain name link.net.id
+ip multicast-routing distributed
+ip multicast multipath s-g-hash next-hop-based
+ip multicast route-limit 65536 1000
+!
+!
+!
+login on-success log
+!
+!
+!
+!
+!
+!
+!
+mpls label protocol ldp
+no mpls ip propagate-ttl 
+mpls ldp explicit-null
+mpls ldp graceful-restart
+mpls ldp igp sync holddown 30000
+mpls ldp label
+ allocate global prefix-list LOOPBACK
+mpls ldp discovery targeted-hello accept
+mpls traffic-eng tunnels
+multilink bundle-name authenticated
+!
+!
+!
+license udi pid ASR-920-24SZ-M sn CAT2302V2AG
+license boot level advancedmetroipaccess
+no license smart enable
+archive
+ log config
+  logging enable
+  logging size 500
+  notify syslog contenttype plaintext
+!
+!
+spanning-tree extend system-id
+sdm prefer video 
+diagnostic bootup level minimal
+!
+!
+username fmnoc secret 5 $1$Zcdl$jPaBShcfCAmHP2Itse3VK1
+!
+redundancy
+!
+!
+!
+!
+!
+transceiver type all
+ monitoring
+!
+!
+!
+class-map match-any CM_VIDEO
+ match mpls experimental topmost 5 
+ match dscp ef 
+class-map match-any CM_P1-DATA
+ match mpls experimental topmost 2 
+class-map match-any CM_P2-DATA
+ match mpls experimental topmost 1 
+class-map match-any CM_CONTROL
+ match mpls experimental topmost 6  7 
+ match dscp cs6  cs7 
+class-map match-any CM_CRITICAL
+ match mpls experimental topmost 4 
+!
+policy-map LKL-5Gbps
+ class class-default
+  police cir 5000000000
+policy-map LKL-6Gbps
+ class class-default
+  police cir 6000000000
+policy-map LKL-7Gbps
+ class class-default
+  police cir 7168000000
+policy-map LKL-1Gbps
+ class class-default
+  shape average 1000000000   
+policy-map PM_VIDEO_INGRESS
+ class class-default
+  set dscp ef
+  set mpls experimental imposition 5
+policy-map PM_CORE_EGRESS_1G
+ class CM_CONTROL
+  priority level 1
+  police cir percent 1
+ class CM_VIDEO
+  priority level 2
+  police cir percent 90
+ class CM_CRITICAL
+  bandwidth percent 3 
+  random-detect
+ class CM_P1-DATA
+  bandwidth percent 3 
+  random-detect
+  queue-limit 150000 us
+ class CM_P2-DATA
+  bandwidth percent 1 
+  random-detect
+ class class-default
+  random-detect
+  queue-limit 5000 us
+policy-map PM_BEST-EFFORT_INGRESS
+ class class-default
+  set mpls experimental imposition 0
+policy-map PM_SHAPER_CORE_EGRESS_1G
+ class class-default
+  shape average 950000000   
+   service-policy PM_CORE_EGRESS_1G
+policy-map LKL-4Gbps
+ class class-default
+  police cir 4000000000
+policy-map PM_CORE_EGRESS_10G
+ class CM_CONTROL
+  priority level 1
+  police cir percent 1
+ class CM_VIDEO
+  priority level 2
+  police cir percent 45
+ class CM_CRITICAL
+  bandwidth percent 10 
+  random-detect
+ class CM_P1-DATA
+  bandwidth percent 30 
+  random-detect
+  queue-limit 3000 us
+ class CM_P2-DATA
+  bandwidth percent 10 
+  random-detect
+ class class-default
+  random-detect
+  queue-limit 1500 us
+policy-map PM_SHAPER_CORE_EGRESS_10G
+ class class-default
+  shape average 9800000000   
+   service-policy PM_CORE_EGRESS_10G
+policy-map PM_CRITICAL_INGRESS
+ class class-default
+  set mpls experimental imposition 4
+policy-map PM_P1-DATA_INGRESS
+ class class-default
+  set mpls experimental imposition 2
+policy-map LKL-3Gbps
+ class class-default
+  shape average 3000000000   
+  police cir 3000000000
+policy-map PM_P2-DATA_INGRESS
+ class class-default
+  set mpls experimental imposition 1
+policy-map PM_CONTROL_INGRESS
+ class class-default
+  set mpls experimental imposition 6
+!
+pseudowire-class genpe01-apjiipe03
+ encapsulation mpls
+ preferred-path interface Tunnel200 
+!
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Loopback0
+ ip address 10.255.102.95 255.255.255.255
+ ip pim sparse-mode
+ ip ospf network point-to-point
+!
+interface Tunnel200
+ description genpe01-apjiipe03
+ ip unnumbered Loopback0
+ tunnel mode mpls traffic-eng
+ tunnel destination 10.255.102.131
+ tunnel mpls traffic-eng path-option 1 explicit name genpe01-apjiipe03_02
+ tunnel mpls traffic-eng path-option 2 explicit name genpe01-apjiipe03_01
+!
+interface GigabitEthernet0/0/0
+ description ACCESS_Balai_Desa_Genteng
+ no ip address
+ negotiation auto
+ service instance 801 ethernet
+  description ACCESS_Balai_Desa_Genteng
+  encapsulation untagged
+  bridge-domain 801
+ !
+!
+interface GigabitEthernet0/0/1
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet0/0/2
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet0/0/3
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet0/0/4
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet0/0/5
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet0/0/6
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet0/0/7
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet0/0/8
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet0/0/9
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet0/0/10
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet0/0/11
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet0/0/12
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet0/0/13
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet0/0/14
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet0/0/15
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet0/0/16
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet0/0/17
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet0/0/18
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet0/0/19
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet0/0/20
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet0/0/21
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet0/0/22
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet0/0/23
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface TenGigabitEthernet0/0/24
+ description [UPLINK][RKT-P-01][Te0/3/0/2][DWDM SDCS]
+ dampening
+ mtu 9202
+ ip address 192.168.229.166 255.255.255.252
+ ip pim sparse-mode
+ ip ospf authentication message-digest
+ ip ospf message-digest-key 1 md5 7 13080711001A472538342E72
+ ip ospf network point-to-point
+ ip ospf bfd
+ load-interval 30
+ carrier-delay up msec 200
+ carrier-delay down msec 200
+ mpls ip
+ mpls traffic-eng tunnels
+ bfd interval 300 min_rx 300 multiplier 3
+ service-policy output PM_SHAPER_CORE_EGRESS_10G
+ ip rsvp bandwidth
+!
+interface TenGigabitEthernet0/0/25
+ description M00521-019_Mitra Visioner Pratama [DC_020621]
+ mtu 9000
+ no ip address
+ load-interval 30
+ shutdown
+ no keepalive
+ service instance 19 ethernet
+  description M00521-019_Mitra Visioner Pratama
+  encapsulation default
+  service-policy input PM_P2-DATA_INGRESS
+  service-policy output LKL-1Gbps
+  xconnect 10.255.13.131 1019 encapsulation mpls
+ !
+!
+interface TenGigabitEthernet0/0/26
+ description [UPLINK][KUTA-PE-03][Te0/0/24][SDCS SLOT#6 PORT#7]
+ dampening
+ mtu 9202
+ ip address 192.168.230.90 255.255.255.252
+ ip pim sparse-mode
+ ip ospf authentication message-digest
+ ip ospf message-digest-key 1 md5 7 141A02080712692437383574
+ ip ospf network point-to-point
+ ip ospf bfd
+ load-interval 30
+ carrier-delay up msec 200
+ carrier-delay down msec 200
+ mpls ip
+ mpls traffic-eng tunnels
+ bfd interval 200 min_rx 200 multiplier 3
+ service-policy output PM_SHAPER_CORE_EGRESS_10G
+ ip rsvp bandwidth
+!
+interface TenGigabitEthernet0/0/27
+ description I00355-001_Inovasi Tjaraka Buana
+ mtu 9000
+ no ip address
+ no keepalive
+ service instance 212 ethernet
+  description I00355-001_Inovasi Tjaraka Buana
+  encapsulation dot1q 605
+  rewrite ingress tag pop 1 symmetric
+  service-policy input PM_P2-DATA_INGRESS
+  service-policy output LKL-7Gbps
+  xconnect 10.255.102.131 10200 encapsulation mpls pw-class genpe01-apjiipe03
+ !
+!
+interface GigabitEthernet0
+ vrf forwarding Mgmt-intf
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface BDI801
+ description ACCESS_Balai_Desa_Genteng
+ ip vrf forwarding gen-corp-linknet01-fo
+ ip address 139.255.23.33 255.255.255.248
+ no ip redirects
+ no ip proxy-arp
+!
+router ospf 1
+ router-id 10.255.102.95
+ max-metric router-lsa on-startup 100
+ auto-cost reference-bandwidth 100000
+ nsf cisco
+ timers throttle spf 1 50 1000
+ timers throttle lsa 0 20 1000
+ network 10.255.102.95 0.0.0.0 area 0
+ network 192.168.229.164 0.0.0.3 area 0
+ network 192.168.230.88 0.0.0.3 area 0
+ mpls ldp sync
+ mpls traffic-eng router-id Loopback0
+ mpls traffic-eng area 0
+!
+router bgp 23700
+ bgp router-id 10.255.102.95
+ bgp consistency-checker auto-repair
+ bgp log-neighbor-changes
+ bgp graceful-restart
+ no bgp default ipv4-unicast
+ neighbor RR-Routers peer-group
+ neighbor RR-Routers remote-as 23700
+ neighbor RR-Routers password 7 03094B080D19624E491958
+ neighbor RR-Routers update-source Loopback0
+ neighbor 10.255.10.4 remote-as 23700
+ neighbor 10.255.10.4 peer-group RR-Routers
+ neighbor 10.255.12.32 remote-as 23700
+ neighbor 10.255.12.32 peer-group RR-Routers
+ !
+ address-family ipv4
+ exit-address-family
+ !
+ address-family vpnv4
+  neighbor RR-Routers send-community extended
+  neighbor 10.255.10.4 activate
+  neighbor 10.255.12.32 activate
+ exit-address-family
+ !
+ address-family ipv4 mdt
+  neighbor 10.255.10.4 activate
+  neighbor 10.255.12.32 activate
+ exit-address-family
+ !
+ address-family ipv4 vrf gen-corp-linknet01-fo
+  import path selection all
+  import path limit 3
+  redistribute connected
+  redistribute static
+  maximum-paths ibgp 2
+  default-information originate
+ exit-address-family
+!
+ip forward-protocol nd
+no ip forward-protocol udp netbios-ns
+no ip forward-protocol udp netbios-dgm
+!
+no ip http server
+no ip http secure-server
+ip tftp source-interface Loopback0
+ip pim ssm range 50
+ip tacacs source-interface Loopback0 
+!
+ip explicit-path name genpe01-apjiipe03_01 enable
+ index 1 next-address 192.168.229.165
+ index 2 next-address 192.168.215.41
+ index 3 next-address 192.168.219.22
+ index 4 next-address 192.168.201.17
+ index 5 next-address 192.168.252.166
+ index 6 next-address 192.168.231.74
+!
+ip explicit-path name genpe01-apjiipe03_02 enable
+ index 1 next-address 192.168.229.165
+ index 2 next-address 192.168.221.98
+ index 3 next-address 192.168.215.33
+ index 4 next-address 192.168.219.22
+ index 5 next-address 192.168.201.17
+ index 6 next-address 192.168.252.166
+ index 7 next-address 192.168.231.74
+!
+!
+ip prefix-list LOOPBACK seq 5 permit 0.0.0.0/0 ge 32
+logging history size 200
+logging alarm informational
+logging source-interface Loopback0
+logging host 10.255.4.13
+logging host 10.255.4.20
+logging host 192.168.190.70
+logging host 192.168.190.146
+access-list 1 permit 10.255.4.254
+access-list 1 permit 192.168.255.170
+access-list 1 permit 10.255.4.5
+access-list 1 permit 10.255.4.7
+access-list 1 permit 10.255.4.6
+access-list 1 permit 10.255.4.8
+access-list 1 permit 10.255.4.13
+access-list 1 permit 10.255.4.14
+access-list 1 permit 192.168.190.0 0.0.1.255
+access-list 1 permit 192.168.192.0 0.0.1.255
+access-list 1 permit 10.255.10.0 0.0.0.255
+access-list 1 permit 10.255.16.0 0.0.0.255
+access-list 1 permit 10.255.12.0 0.0.0.255
+access-list 1 permit 10.10.1.0 0.0.0.255
+access-list 1 permit 192.168.200.0 0.0.7.255
+access-list 1 permit 192.168.224.0 0.0.7.255
+access-list 1 permit 10.255.101.0 0.0.0.255
+access-list 40 permit 10.255.17.129
+access-list 40 permit 10.255.10.15
+access-list 50 permit 239.232.0.0 0.0.255.255
+access-list 90 permit 192.168.190.242
+access-list 90 permit 192.168.255.186
+access-list 90 permit 192.168.190.146
+access-list 90 permit 192.168.190.178
+access-list 90 permit 192.168.190.70
+access-list 90 permit 192.168.200.102
+access-list 90 permit 10.255.4.6
+access-list 90 permit 10.255.4.13
+!
+snmp-server view cutdown iso included
+snmp-server view cutdown at excluded
+snmp-server view cutdown ip.21 excluded
+snmp-server view cutdown ipNetToMediaEntry.1 excluded
+snmp-server view cutdown ipNetToMediaEntry.3 excluded
+snmp-server view cutdown ipNetToMediaEntry.4 excluded
+snmp-server community 63mb31ju64103 view cutdown RW 90
+snmp-server community kvcn view cutdown RO 90
+snmp-server trap-source Loopback0
+snmp-server packetsize 2048
+snmp-server location Shelter Genteng (JATIM)
+snmp-server enable traps snmp authentication linkdown linkup coldstart warmstart
+snmp-server enable traps tty
+snmp-server enable traps ospf state-change
+snmp-server enable traps ospf errors
+snmp-server enable traps ospf retransmit
+snmp-server enable traps ospf lsa
+snmp-server enable traps ospf cisco-specific state-change nssa-trans-change
+snmp-server enable traps ospf cisco-specific errors
+snmp-server enable traps ospf cisco-specific retransmit
+snmp-server enable traps ospf cisco-specific lsa
+snmp-server enable traps bgp
+snmp-server enable traps config
+snmp-server enable traps cpu threshold
+snmp-server enable traps mpls ldp
+snmp-server enable traps mpls vpn
+snmp ifmib ifindex persist
+mpls ldp router-id Loopback0 force
+!
+tacacs-server host 192.168.190.110
+tacacs-server directed-request
+tacacs-server key 7 011F570A5005551B2A4957
+!
+!
+!
+control-plane
+!
+banner motd ^CC
+
+                ACCESS IS RESTRICTED TO AUTHORISED PERSONNEL ONLY
+
+                This system is equipped with a security system
+                intended to prevent and record unauthorised
+                access attempts. Unauthorised access or use
+                shall render the user liable to criminal and or
+                civil prosecution.
+^C
+!
+line con 0
+ stopbits 1
+line aux 0
+ no exec
+ stopbits 1
+line vty 0 4
+ access-class 1 in
+ exec-timeout 15 0
+ password 7 12141514191D
+ logging synchronous
+ transport input telnet ssh
+line vty 5 15
+ access-class 1 in
+ exec-timeout 15 0
+ password 7 04561B050437
+ logging synchronous
+ transport input telnet ssh
+!
+ntp authentication-key 1 md5 151F1B0F0F3C682A3C2374 7
+ntp authenticate
+ntp trusted-key 1
+ntp source Loopback0
+ntp access-group peer 40
+ntp server 10.255.17.129 key 1 source Loopback0
+ntp server 10.255.10.15 key 1 source Loopback0
+!
+
+!
+end
+

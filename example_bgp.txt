@@ -1,0 +1,198 @@
+router bgp 23700
+ bgp router-id 10.255.11.20
+ bgp log-neighbor-changes
+ bgp graceful-restart restart-time 120
+ bgp graceful-restart stalepath-time 360
+ bgp graceful-restart
+ no bgp default ipv4-unicast
+ neighbor RR-Routers peer-group
+ neighbor RR-Routers remote-as 23700
+ neighbor RR-Routers password 7 151F1B0F0F3C68262F2374
+ neighbor RR-Routers update-source Loopback0
+ neighbor 10.255.10.4 remote-as 23700
+ neighbor 10.255.10.4 peer-group RR-Routers
+ neighbor 10.255.12.32 remote-as 23700
+ neighbor 10.255.12.32 peer-group RR-Routers
+ !
+ address-family ipv4
+ exit-address-family
+ !
+ address-family vpnv4
+  neighbor RR-Routers send-community extended
+  neighbor 10.255.10.4 activate
+  neighbor 10.255.12.32 activate
+ exit-address-family
+ !
+ address-family ipv4 mdt
+  neighbor 10.255.10.4 activate
+  neighbor 10.255.12.32 activate
+ exit-address-family
+ !
+ address-family ipv4 vrf rkt-corp-arya01-fo
+  import path selection all
+  import path limit 3
+  redistribute static
+  redistribute connected
+ exit-address-family
+ !
+ address-family ipv4 vrf rkt-corp-bankbii01-fo
+  import path selection all
+  import path limit 3
+  redistribute static
+  redistribute connected
+ exit-address-family
+ !
+ address-family ipv4 vrf rkt-corp-bca01-fo
+  import path selection all
+  import path limit 3
+  redistribute connected
+  redistribute ospf 811
+  redistribute ospf 816 match internal external 1 external 2
+  redistribute ospf 817 match internal external 1 external 2
+  neighbor 10.253.212.217 remote-as 65343
+  neighbor 10.253.212.217 activate
+  neighbor 10.253.212.217 soft-reconfiguration inbound
+  neighbor 10.253.212.217 maximum-prefix 10 restart 1
+  neighbor 10.253.213.13 remote-as 65344
+  neighbor 10.253.213.13 activate
+  neighbor 10.253.213.13 soft-reconfiguration inbound
+  neighbor 10.253.213.13 maximum-prefix 10 restart 1
+  neighbor 10.253.213.33 remote-as 65343
+  neighbor 10.253.213.33 activate
+  neighbor 10.253.213.33 soft-reconfiguration inbound
+  neighbor 10.253.213.33 maximum-prefix 10 restart 1
+  neighbor 10.253.213.77 remote-as 65343
+  neighbor 10.253.213.77 activate
+  neighbor 10.253.213.77 soft-reconfiguration inbound
+  neighbor 10.253.213.77 maximum-prefix 10 restart 1
+  neighbor 10.253.213.185 remote-as 65343
+  neighbor 10.253.213.185 activate
+  neighbor 10.253.213.185 soft-reconfiguration inbound
+  neighbor 10.253.213.185 maximum-prefix 10 restart 1
+  neighbor 10.253.214.57 remote-as 65343
+  neighbor 10.253.214.57 activate
+  neighbor 10.253.214.57 soft-reconfiguration inbound
+  neighbor 10.253.214.57 maximum-prefix 10 restart 1
+  neighbor 10.253.215.81 remote-as 65343
+  neighbor 10.253.215.81 activate
+  neighbor 10.253.215.81 soft-reconfiguration inbound
+  neighbor 10.253.215.81 maximum-prefix 10 restart 1
+  neighbor 10.253.215.89 remote-as 65343
+  neighbor 10.253.215.89 activate
+  neighbor 10.253.215.89 soft-reconfiguration inbound
+  neighbor 10.253.215.89 maximum-prefix 10 restart 1
+  neighbor 10.253.215.101 remote-as 65344
+  neighbor 10.253.215.101 activate
+  neighbor 10.253.215.101 soft-reconfiguration inbound
+  neighbor 10.253.215.101 maximum-prefix 10 restart 1
+ exit-address-family
+ !
+ address-family ipv4 vrf rkt-corp-cimb01-fo
+  import path selection all
+  import path limit 3
+  redistribute static
+  redistribute connected
+  neighbor 192.168.235.86 remote-as 65412
+  neighbor 192.168.235.86 activate
+  neighbor 192.168.235.86 soft-reconfiguration inbound
+  neighbor 192.168.235.86 maximum-prefix 8000 90 warning-only
+  neighbor 192.168.235.210 remote-as 65420
+  neighbor 192.168.235.210 activate
+  neighbor 192.168.235.210 soft-reconfiguration inbound
+  neighbor 192.168.235.210 maximum-prefix 8000 90 warning-only
+ exit-address-family
+ !
+ address-family ipv4 vrf rkt-corp-cinemax01-fo
+  import path selection all
+  import path limit 3
+  redistribute static
+  redistribute connected
+ exit-address-family
+ !
+ address-family ipv4 vrf rkt-corp-clearmpts01-fo
+  import path selection all
+  import path limit 3
+  redistribute connected
+  maximum-paths ibgp 8
+ exit-address-family
+ !
+ address-family ipv4 vrf rkt-corp-csf01-fo
+  import path selection all
+  import path limit 3
+  redistribute static
+  redistribute connected
+ exit-address-family
+ !
+ address-family ipv4 vrf rkt-corp-hdfinance01-fo
+  import path selection all
+  import path limit 3
+  redistribute static
+  redistribute connected
+ exit-address-family
+ !
+ address-family ipv4 vrf rkt-corp-iptv01-fo
+  redistribute connected
+ exit-address-family
+ !
+ address-family ipv4 vrf rkt-corp-linknet01-fo
+  import path selection all
+  import path limit 3
+  redistribute static
+  redistribute connected
+  redistribute ospf 881 match internal external 1 external 2
+  redistribute ospf 920 match internal external 1 external 2
+  maximum-paths ibgp 2
+ exit-address-family
+ !
+ address-family ipv4 vrf rkt-cs-akamai1-up
+  import path selection all
+  import path limit 3
+  redistribute static
+  redistribute connected
+ exit-address-family
+ !
+ address-family ipv4 vrf rkt-cs-google1-up
+  import path selection all
+  import path limit 3
+  redistribute static
+  redistribute connected
+ exit-address-family
+ !
+ address-family ipv4 vrf rkt-ftth-iptv03-fo
+  import path selection all
+  import path limit 3
+  redistribute connected
+ exit-address-family
+ !
+ address-family ipv4 vrf rkt-hub-nsg-fo
+  import path selection all
+  import path limit 3
+  redistribute static
+  redistribute connected
+ exit-address-family
+ !
+ address-family ipv4 vrf rkt-nms-fiber01-fo
+  redistribute static
+  redistribute connected
+ exit-address-family
+ !
+ address-family ipv4 vrf rkt-nms-me1200-fo
+  redistribute static
+  redistribute connected
+ exit-address-family
+ !
+ address-family ipv4 vrf rkt-nms-metro01-fo
+  redistribute static
+  redistribute connected
+ exit-address-family
+ !
+ address-family ipv4 vrf rkt-nms-rfgw01-fo
+  redistribute static
+  redistribute connected
+ exit-address-family
+ !
+ address-family ipv4 vrf rkt-nms-ups01-fo
+  redistribute static
+  redistribute connected
+ exit-address-family
+!

@@ -1,0 +1,11 @@
+interface Port-channel10
+ description To_Akamai_SBY
+ ip vrf forwarding rkt-cs-akamai1-up
+ ip address 23.39.208.1 255.255.240.0 secondary
+ ip address 23.39.224.1 255.255.240.0 secondary
+ ip address 96.7.38.1 255.255.254.0 secondary
+ ip address 96.7.60.1 255.255.252.0 secondary
+ ip address 61.247.0.65 255.255.255.192
+ no ip redirects
+ service-policy input from-cacheserver
+!

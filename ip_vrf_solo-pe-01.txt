@@ -1,0 +1,80 @@
+ip vrf solo-corp-clearmpts01-fo
+ rd 10.255.101.59:829
+ mdt default 239.232.0.9
+ mdt data 239.232.9.0 0.0.0.255 threshold 1
+ mdt log-reuse
+ mdt data threshold 1
+ route-target export 23700:829
+ route-target import 23700:829
+!
+ip vrf solo-corp-iptv01-fo
+ rd 10.255.101.59:2
+ mdt default 239.232.0.3
+ mdt data 239.232.3.0 0.0.0.255 threshold 1
+ mdt log-reuse
+ mdt data threshold 1
+ route-target export 23700:908
+ route-target import 23700:908
+!
+ip vrf solo-corp-linknet01-fo
+ rd 10.255.101.59:20000
+ route-target export 23700:20000
+ route-target import 23700:20000
+ route-target import 23700:35000
+ route-target import 23700:35100
+ route-target import 23700:35200
+!
+
+
+ip vrf solo-ftth-vod01-fo
+ rd 10.255.101.59:909
+ route-target export 23700:909
+ route-target import 23700:909
+ route-target import 23700:11
+!
+ip vrf solo-nms-fiber01-fo
+ rd 10.255.101.59:15000
+ route-target export 23700:15000
+ route-target import 23700:15000
+ route-target import 23700:5066
+!
+ip vrf solo-nms-ftth01-fo
+ rd 10.255.101.59:906
+ route-target export 23700:906
+ route-target import 23700:906
+!
+ip vrf solo-nms-metro01-fo
+ rd 10.255.101.59:15020
+ route-target export 23700:15020
+ route-target import 23700:15020
+!
+ip vrf solo-nms-rg01-fo
+ rd 10.255.101.59:1100
+ route-target export 23700:1100
+ route-target import 23700:1100
+!
+ip vrf solo-nms-ups01-fo
+ rd 10.255.101.59:15040
+ route-target export 23700:15040
+ route-target import 23700:15040
+ route-target import 23700:5066
+!
+ip vrf spider-ftth-iptv-fo
+ rd 10.255.101.59:907
+ mdt default 239.232.0.2
+ mdt data 239.232.2.0 0.0.0.255 threshold 1
+ mdt log-reuse
+ mdt data threshold 1
+ route-target export 23700:907
+ route-target import 23700:907
+!
+ip vrf spider-nms-me1200-fo
+ rd 10.255.101.59:15050
+ route-target export 23700:15050
+ route-target import 23700:15050
+!
+!
+!
+!
+!
+!
