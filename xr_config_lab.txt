@@ -1,6 +1,17 @@
 
 !--------------------------- layer 2 interfaces ---------------------------------- 
-vrf solo-corp-clearmpts01-fo
+vrf any-corp-hubmonitoring-any
+ address-family ipv4 unicast
+  import route-target
+   23700:1300
+   23700:5066
+  !
+  export route-target
+   23700:1300
+  !
+ !
+! 
+vrf krg-corp-clearmpts01-fo
  address-family ipv4 unicast
   import route-target
    23700:829
@@ -10,30 +21,89 @@ vrf solo-corp-clearmpts01-fo
   !
  !
 ! 
-vrf solo-corp-iptv01-fo
- address-family ipv4 unicast
-  import route-target
-   23700:908
-  !
-  export route-target
-   23700:908
-  !
- !
-! 
-vrf solo-corp-linknet01-fo
+vrf krg-corp-linknet01-fo
  address-family ipv4 unicast
   import route-target
    23700:20000
-   23700:35000
-   23700:35100
-   23700:35200
   !
   export route-target
    23700:20000
   !
  !
 ! 
-vrf solo-ftth-vod01-fo
+vrf krg-hub-nsg-fo
+ address-family ipv4 unicast
+  import route-target
+   23700:808
+  !
+  export route-target
+   23700:808
+  !
+ !
+! 
+vrf krg-nms-fiber01-fo
+ address-family ipv4 unicast
+  import route-target
+   23700:15000
+   23700:5066
+  !
+  export route-target
+   23700:15000
+  !
+ !
+! 
+vrf krg-nms-me1200-fo
+ address-family ipv4 unicast
+  import route-target
+   23700:15050
+  !
+  export route-target
+   23700:15050
+  !
+ !
+! 
+vrf krg-nms-metro01-fo
+ address-family ipv4 unicast
+  import route-target
+   23700:15020
+  !
+  export route-target
+   23700:15020
+  !
+ !
+! 
+vrf krg-nms-rfgw01-fo
+ address-family ipv4 unicast
+  import route-target
+   23700:15070
+  !
+  export route-target
+   23700:15070
+  !
+ !
+! 
+vrf krg-nms-ups01-fo
+ address-family ipv4 unicast
+  import route-target
+   23700:15040
+   23700:5066
+  !
+  export route-target
+   23700:15040
+  !
+ !
+! 
+vrf krg-ftth-iptv-fo
+ address-family ipv4 unicast
+  import route-target
+   23700:907
+  !
+  export route-target
+   23700:907
+  !
+ !
+! 
+vrf krg-ftth-vod01-fo
  address-family ipv4 unicast
   import route-target
    23700:909
@@ -44,75 +114,123 @@ vrf solo-ftth-vod01-fo
   !
  !
 ! 
-vrf solo-nms-fiber01-fo
- address-family ipv4 unicast
-  import route-target
-   23700:15000
-   23700:5066
-  !
-  export route-target
-   23700:15000
-  !
- !
-! 
-vrf solo-nms-ftth01-fo
+vrf krg-nms-ftth01-fo
  address-family ipv4 unicast
   import route-target
    23700:906
   !
   export route-target
    23700:906
-  !
- !
-! 
-vrf solo-nms-metro01-fo
- address-family ipv4 unicast
-  import route-target
-   23700:15020
-  !
-  export route-target
-   23700:15020
-  !
- !
-! 
-vrf solo-nms-rg01-fo
- address-family ipv4 unicast
-  import route-target
-   23700:1100
-  !
-  export route-target
-   23700:1100
-  !
- !
-! 
-vrf solo-nms-ups01-fo
- address-family ipv4 unicast
-  import route-target
-   23700:15040
-   23700:5066
-  !
-  export route-target
-   23700:15040
-  !
- !
-! 
-vrf spider-ftth-iptv-fo
- address-family ipv4 unicast
-  import route-target
-   23700:907
-  !
-  export route-target
-   23700:907
-  !
- !
-! 
-vrf spider-nms-me1200-fo
- address-family ipv4 unicast
-  import route-target
-   23700:15050
-  !
-  export route-target
-   23700:15050
   !
  !
 !
+router bgp 23700
+ nsr
+ bgp router-id <<New IP Loopback>>
+ bgp graceful-restart restart-time 120
+ bgp graceful-restart stalepath-time 360
+ bgp graceful-restart
+ bgp log neighbor changes detail
+ address-family ipv4 unicast
+ !
+ address-family vpnv4 unicast
+ !
+ address-family ipv4 mdt
+ !
+ neighbor-group RR-Routers
+  remote-as 23700
+  password encrypted 141A020807126929233872
+  update-source Loopback0
+  address-family vpnv4 unicast
+  !
+  address-family ipv4 mdt
+  !
+ !
+ neighbor 10.255.10.4
+  use neighbor-group RR-Routers
+ !
+ neighbor 10.255.12.32
+  use neighbor-group RR-Routers
+ !
+ 
+ 
+ vrf any-corp-hubmonitoring-any
+  rd 10.255.19.20:1300
+  address-family ipv4 unicast
+   redistribute connected
+   redistribute static
+  !
+ ! 
+ vrf krg-corp-clearmpts01-fo
+  rd 10.255.19.20:829
+  address-family ipv4 unicast
+   redistribute connected
+  !
+ ! 
+ vrf krg-corp-linknet01-fo
+  rd 10.255.19.20:20000
+  address-family ipv4 unicast
+   redistribute connected
+   redistribute static
+  !
+ ! 
+ vrf krg-hub-nsg-fo
+  rd 10.255.19.20:808
+  address-family ipv4 unicast
+   redistribute connected
+  !
+ ! 
+ vrf krg-nms-fiber01-fo
+  rd 10.255.19.20:15010
+  address-family ipv4 unicast
+   redistribute connected
+   redistribute static
+  !
+ ! 
+ vrf krg-nms-me1200-fo
+  rd 10.255.19.20:15050
+  address-family ipv4 unicast
+   redistribute connected
+   redistribute static
+  !
+ ! 
+ vrf krg-nms-metro01-fo
+  rd 10.255.19.20:15020
+  address-family ipv4 unicast
+   redistribute connected
+   redistribute static
+  !
+ ! 
+ vrf krg-nms-rfgw01-fo
+  rd 10.255.19.20:15070
+  address-family ipv4 unicast
+   redistribute connected
+  !
+ ! 
+ vrf krg-nms-ups01-fo
+  rd 10.255.19.20:15040
+  address-family ipv4 unicast
+   redistribute connected
+  !
+ ! 
+ vrf krg-ftth-iptv-fo
+  rd 10.255.19.27:907
+  address-family ipv4 unicast
+   redistribute connected
+   redistribute static
+  !
+ ! 
+ vrf krg-ftth-vod01-fo
+  rd 10.255.19.27:909
+  address-family ipv4 unicast
+   redistribute connected
+   redistribute static
+  !
+ ! 
+ vrf krg-nms-ftth01-fo
+  rd 10.255.19.27:906
+  address-family ipv4 unicast
+   redistribute connected
+   redistribute static
+  !
+ !

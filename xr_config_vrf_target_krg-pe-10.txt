@@ -1,0 +1,180 @@
+ip vrf any-corp-hubmonitoring-any
+ rd 10.255.19.20:1300
+ route-target export 23700:1300
+ route-target import 23700:1300
+ route-target import 23700:5066
+!
+ip vrf krg-corp-clearmpts01-fo
+ rd 10.255.19.20:829
+ mdt default 239.232.0.9
+ mdt data 239.232.9.0 0.0.0.255 threshold 1
+ mdt log-reuse
+ mdt data threshold 1
+ route-target export 23700:829
+ route-target import 23700:829
+!
+ip vrf krg-corp-linknet01-fo
+ rd 10.255.19.20:20000
+ route-target export 23700:20000
+ route-target import 23700:20000
+!
+ip vrf krg-hub-nsg-fo
+ rd 10.255.19.20:808
+ mdt default 239.232.0.1
+ mdt data 239.232.1.0 0.0.0.255 threshold 1
+ mdt log-reuse
+ mdt data threshold 1
+ route-target export 23700:808
+ route-target import 23700:808
+!
+ip vrf krg-nms-fiber01-fo
+ rd 10.255.19.20:15010
+ route-target export 23700:15000
+ route-target import 23700:15000
+ route-target import 23700:5066
+!
+ip vrf krg-nms-me1200-fo
+ rd 10.255.19.20:15050
+ route-target export 23700:15050
+ route-target import 23700:15050
+!
+ip vrf krg-nms-metro01-fo
+ rd 10.255.19.20:15020
+ route-target export 23700:15020
+ route-target import 23700:15020
+!
+ip vrf krg-nms-rfgw01-fo
+ rd 10.255.19.20:15070
+ route-target export 23700:15070
+ route-target import 23700:15070
+!
+ip vrf krg-nms-ups01-fo
+ rd 10.255.19.20:15040
+ route-target export 23700:15040
+ route-target import 23700:15040
+ route-target import 23700:5066
+!
+ip vrf krg-ftth-iptv-fo
+ rd 10.255.19.27:907
+ mdt default 239.232.0.2
+ mdt data 239.232.2.0 0.0.0.255 threshold 1
+ mdt log-reuse
+ mdt data threshold 1
+ route-target export 23700:907
+ route-target import 23700:907
+!
+ip vrf krg-ftth-vod01-fo
+ rd 10.255.19.27:909
+ route-target export 23700:909
+ route-target import 23700:909
+ route-target import 23700:11
+!
+ip vrf krg-nms-ftth01-fo
+ rd 10.255.19.27:906
+ route-target export 23700:906
+ route-target import 23700:906
+!
+
+router bgp 23700
+ bgp router-id 10.255.19.20
+ bgp consistency-checker error-message
+ bgp log-neighbor-changes
+ bgp graceful-restart restart-time 120
+ bgp graceful-restart stalepath-time 360
+ bgp graceful-restart
+ no bgp default ipv4-unicast
+ neighbor RR-Routers peer-group
+ neighbor RR-Routers remote-as 23700
+ neighbor RR-Routers password 7 082C5C4D020F4615151B4D
+ neighbor RR-Routers update-source Loopback0
+ neighbor 10.255.10.4 remote-as 23700
+ neighbor 10.255.10.4 peer-group RR-Routers
+ neighbor 10.255.12.32 remote-as 23700
+ neighbor 10.255.12.32 peer-group RR-Routers
+ !
+ address-family ipv4
+  redistribute connected
+  redistribute static
+ exit-address-family
+ !
+ address-family vpnv4
+  neighbor RR-Routers send-community extended
+  neighbor 10.255.10.4 activate
+  neighbor 10.255.12.32 activate
+ exit-address-family
+ !
+ address-family ipv4 mdt
+  neighbor 10.255.10.4 activate
+  neighbor 10.255.12.32 activate
+ exit-address-family
+ !
+ address-family ipv4 vrf any-corp-hubmonitoring-any
+  import path selection all
+  import path limit 3
+  redistribute connected
+  redistribute static
+ exit-address-family
+ !
+ address-family ipv4 vrf krg-corp-clearmpts01-fo
+  import path selection all
+  import path limit 3
+  redistribute connected
+  maximum-paths ibgp 2
+ exit-address-family
+ !
+ address-family ipv4 vrf krg-corp-linknet01-fo
+  import path selection all
+  import path limit 3
+  redistribute connected
+  redistribute static
+ exit-address-family
+ !
+ address-family ipv4 vrf krg-hub-nsg-fo
+  import path selection all
+  import path limit 3
+  redistribute connected
+ exit-address-family
+ !
+ address-family ipv4 vrf krg-nms-fiber01-fo
+  redistribute connected
+  redistribute static
+ exit-address-family
+ !
+ address-family ipv4 vrf krg-nms-me1200-fo
+  redistribute connected
+  redistribute static
+ exit-address-family
+ !
+ address-family ipv4 vrf krg-nms-metro01-fo
+  redistribute connected
+  redistribute static
+ exit-address-family
+ !
+ address-family ipv4 vrf krg-nms-rfgw01-fo
+  redistribute connected
+ exit-address-family
+ !
+ address-family ipv4 vrf krg-nms-ups01-fo
+  redistribute connected
+ exit-address-family
+ !
+ address-family ipv4 vrf krg-ftth-iptv-fo
+  import path selection all
+  import path limit 3
+  redistribute connected
+  redistribute static
+ exit-address-family
+ !
+ address-family ipv4 vrf krg-ftth-vod01-fo
+  import path selection all
+  import path limit 3
+  redistribute connected
+  redistribute static
+ exit-address-family
+ !
+ address-family ipv4 vrf krg-nms-ftth01-fo
+  redistribute connected
+  redistribute static
+ exit-address-family
+ !
+!

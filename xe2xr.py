@@ -1,4 +1,5 @@
 from sys import argv
+from turtle import update
 from ciscoconfparse import CiscoConfParse
 import re
 from pprint import pprint
@@ -141,6 +142,53 @@ vrf {{vrf}}
 !
 {%- endif %}
 '''
+
+        self.bgp_base = '''
+router bgp 23700
+ nsr
+ bgp router-id <<New IP Loopback>>
+ bgp graceful-restart restart-time 120
+ bgp graceful-restart stalepath-time 360
+ bgp graceful-restart
+ bgp log neighbor changes detail
+ address-family ipv4 unicast
+ !
+ address-family vpnv4 unicast
+ !
+ address-family ipv4 mdt
+ !
+ neighbor-group RR-Routers
+  remote-as 23700
+  password encrypted 141A020807126929233872
+  update-source Loopback0
+  address-family vpnv4 unicast
+  !
+  address-family ipv4 mdt
+  !
+ !
+ neighbor 10.255.10.4
+  use neighbor-group RR-Routers
+ !
+ neighbor 10.255.12.32
+  use neighbor-group RR-Routers
+ !
+ 
+'''
+        self.bgp_vrf_temp = '''
+ {%- if vrf != None %} 
+ vrf {{vrf}}
+  rd {{ip_vrf['rd']}}
+  address-family ipv4 unicast
+   {%- if ip_vrf['redistribute_conn'] == 1 %}
+   redistribute connected
+   {%- endif %}
+   {%- if ip_vrf['redistribute_static'] == 1 %}
+   redistribute static
+   {%- endif %}
+  !
+ !
+ {%- endif %}
+'''
     
     def xr_static_route(self, vrf=None, networks=[], l3_interfaces=[], bfd=[]):
         static_route = Template(self.static_route)
@@ -193,6 +241,11 @@ vrf {{vrf}}
     def xr_vrf_target(self, vrf=None, vrf_target_int=[]):
         vrf_target = Template(self.vrf_route_target)
         result = vrf_target.render(vrf=vrf, ip_vrf=vrf_target_int)
+        return result
+    
+    def xr_bgp_vrf(self, vrf=None, vrf_target_int=[]):
+        bgp_vrf = Template(self.bgp_vrf_temp)
+        result = bgp_vrf.render(vrf=vrf, ip_vrf=vrf_target_int)
         return result
     
 class xe2xr():
@@ -389,7 +442,11 @@ class xe2xr():
                 'rd' : None,
                 'import-targets' : None,
                 'export-targets' : None,
-                'map' : None
+                'map' : None,
+                'import_selection' : None,
+                'import_limit': None,
+                'redistribute_conn' : None,
+                'redistribute_static' : None
             }
             import_list = list()
             export_list = list()
@@ -413,9 +470,10 @@ class xe2xr():
             ip_vrfs.append(ip_vrf)
         return ip_vrfs
     
-    def find_bgp(self):
+    def find_bgp(self, vrfs):
         bgps_cmd = self.ciscoparse.find_objects(r'router bgp')
         bgps = list()
+        updated_vrf = list()
         for each_bgp in bgps_cmd:
             bgp = {
                 'number' : None,
@@ -450,18 +508,22 @@ class xe2xr():
                             neighbor_group['remote-as'] = neighbor_info.group(2)
                             neighbor_group['peer-group'] = False """
                 if 'address-family ipv4 vrf' in cmd1.text:
-                    address_vrf = re.search('address-family ipv4 (.+)', cmd1.text)
+                    address_vrf_name = re.search('address-family ipv4 vrf (\S+)', cmd1.text)
+                    for ip_vrf in vrfs:
+                        if ip_vrf['vrf'] == address_vrf_name.group(1):
+                            current_vrf = ip_vrf
                     for cmd2 in cmd1.children:
                         if 'import path selection all' in cmd2.text:
-                            import_selection = 1
+                            current_vrf['import_selection'] = 1
                         elif 'import path limit 3' in cmd2.text:
-                            import_limit = 1
+                            current_vrf['import_limit'] = 1
                         elif 'redistribute connected' in cmd2.text:
-                            redistribute_conn = 1
+                            current_vrf['redistribute_conn'] = 1
                         elif 'redistribute static' in cmd2.text:
-                            redistribute_static = 1
+                            current_vrf['redistribute_static'] = 1
+                    updated_vrf.append(current_vrf)
             print("let's see")
-        return bgps
+        return bgps, updated_vrf
 
 
 
@@ -480,8 +542,9 @@ def main():
     print(bfd_static)
     vrf_target = config.find_vrf_target()
     print(vrf_target)
-    bgpes = config.find_bgp()
+    bgpes, vrf_bgp = config.find_bgp(vrf_target)
     print(bgpes)
+    print(vrf_bgp)
     xr_template = xe2xr_template()
     #print(bfd_static)
 
@@ -589,6 +652,15 @@ def main():
                 vrf_target_template = xr_template.xr_vrf_target(vrf=i['vrf'], vrf_target_int= i)
                 print(vrf_target_template)
                 log.write(vrf_target_template)
+            if len(vrf_bgp) > 0:
+                bgp_template = xr_template.bgp_base
+                #result_bgp = bgp_template.render()
+                print(bgp_template)
+                log.write(bgp_template)
+                for i in vrf_bgp:
+                    vrf_bgp_template = xr_template.xr_bgp_vrf(vrf=i['vrf'], vrf_target_int= i)
+                    print(vrf_bgp_template)
+                    log.write(vrf_bgp_template)
 
 if __name__ == "__main__":
     main()

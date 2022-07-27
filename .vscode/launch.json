@@ -11,7 +11,7 @@
             "program": "C:\\Users\\naufal.kurniawan\\xe2xr\\xe2xr.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["ip_vrf_solo-pe-01.txt"]
+            "args": ["xr_config_vrf_target_krg-pe-10.txt"]
         }
     ]
 }
