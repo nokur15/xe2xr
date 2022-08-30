@@ -654,7 +654,11 @@ def main():
                 log.write(vrf_target_template)
             if len(vrf_bgp) > 0:
                 bgp_template = xr_template.bgp_base
-                #result_bgp = bgp_template.render()
+                #ketika udah ada IP Loopback baru
+                #bgp_template = Template(xr_template.bgp_base)
+                #result_bgp = bgp_template.render(ip_loopback = ...)
+                #print(result_bgp)
+                #log.write(result_bgp)
                 print(bgp_template)
                 log.write(bgp_template)
                 for i in vrf_bgp:
